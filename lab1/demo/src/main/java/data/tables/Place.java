@@ -1,4 +1,4 @@
-package dto;
+package data.tables;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
