@@ -1,4 +1,4 @@
-package dto;
+package data.tables;
 
 public enum PlaceType {
     FLAT,
