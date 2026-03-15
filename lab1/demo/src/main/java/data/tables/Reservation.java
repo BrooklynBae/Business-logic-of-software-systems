@@ -30,9 +30,44 @@ public class Reservation {
     @Positive
     private Integer guestsAmount;
 
+    @Column(name = "pets_amount", nullable = false)
+    @Positive
+    private Integer petsAmount;
+
     @Column(name = "price", nullable = false)
     @Positive
     private double price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", length = 25, nullable = false, unique = false)
+    private PlaceType placeType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 25, nullable = false, unique = false)
+    private PaymentMethod paymentMethod;
+
+    public PlaceType getPlaceType() {
+        return placeType;
+    }
+
+    public void setPlaceType(PlaceType placeType) {
+        this.placeType = placeType;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public Integer getPetsAmount() {
+        return petsAmount;
+    }
+
+    public void setPetsAmount(Integer petsAmount) {
+        this.petsAmount = petsAmount;
+    }
 
     public long getId() {
         return id;
