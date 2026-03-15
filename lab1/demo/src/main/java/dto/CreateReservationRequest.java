@@ -8,6 +8,15 @@ public class CreateReservationRequest {
     private Integer guestsAmount;
     private Boolean agreedToReservation;
     private Integer petsAmount;
+    private Long idOwner;
+
+    public Long getIdOwner() {
+        return idOwner;
+    }
+
+    public void setIdOwner(Long idOwner) {
+        this.idOwner = idOwner;
+    }
 
     public Integer getPetsAmount() {
         return petsAmount;
