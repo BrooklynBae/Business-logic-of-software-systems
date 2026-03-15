@@ -2,11 +2,9 @@ package dto;
 
 import data.tables.Owner;
 import data.tables.PlaceType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 
-public class PlaceResponse {
-    public PlaceResponse(Long id, String name, String town, String description, PlaceType placeType, double rating, Owner owner) {
+public class PlaceDto {
+    public PlaceDto(Long id, String name, String town, String description, PlaceType placeType, double rating, Owner owner) {
         this.id = id;
         this.name = name;
         this.town = town;

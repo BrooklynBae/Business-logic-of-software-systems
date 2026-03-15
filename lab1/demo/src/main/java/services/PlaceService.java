@@ -2,7 +2,7 @@ package services;
 
 import data.repository.PlaceRepository;
 import data.tables.Place;
-import dto.PlaceResponse;
+import dto.PlaceDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,8 +16,8 @@ public class PlaceService {
         this.placeRepository = placeRepository;
     }
 
-    private PlaceResponse toResponse(Place place) {
-        return new PlaceResponse(
+    private PlaceDto toResponse(Place place) {
+        return new PlaceDto(
                 place.getId(),
                 place.getName(),
                 place.getTown(),
@@ -27,20 +27,20 @@ public class PlaceService {
                 place.getOwner()
         );
     }
-    public List<PlaceResponse> findByTown(String town) {
+    public List<PlaceDto> findByTown(String town) {
         return placeRepository.findByTownIgnoreCase(town).stream()
                 .map(place -> toResponse(place))
                 .toList();
     }
 
-    public List<PlaceResponse> findAllSortedByRating() {
+    public List<PlaceDto> findAllSortedByRating() {
         return placeRepository.findByRatingOrderByRatingDesc()
                 .stream()
                 .map(place -> toResponse(place))
                 .toList();
     }
 
-    public PlaceResponse findPlace(long id) {
+    public PlaceDto findPlace(long id) {
         return null;
     }
 }

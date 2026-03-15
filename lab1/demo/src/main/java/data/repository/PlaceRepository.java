@@ -1,7 +1,6 @@
 package data.repository;
 
 import data.tables.Place;
-import dto.PlaceResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

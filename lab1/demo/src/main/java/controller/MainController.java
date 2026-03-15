@@ -1,7 +1,6 @@
 package controller;
 
-import data.tables.Place;
-import dto.PlaceResponse;
+import dto.PlaceDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import services.PlaceService;
@@ -17,18 +16,18 @@ public class MainController {
         this.placeService = placeService;
     }
     @GetMapping("/town/{town}")
-    public List<PlaceResponse> getPlacesByTown(@RequestParam(required = false) String town) {
+    public List<PlaceDto> getPlacesByTown(@RequestParam(required = false) String town) {
         return placeService.findByTown(town);
     }
 
     @GetMapping("/rating")
-    public List<PlaceResponse> getPlacesByRating() {
+    public List<PlaceDto> getPlacesByRating() {
         return placeService.findAllSortedByRating();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PlaceResponse> getById(@PathVariable Long id) {
-        PlaceResponse response = placeService.findPlace(id);
+    public ResponseEntity<PlaceDto> getById(@PathVariable Long id) {
+        PlaceDto response = placeService.findPlace(id);
         return ResponseEntity.ok(response);
     }
 }
