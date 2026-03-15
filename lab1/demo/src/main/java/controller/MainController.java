@@ -16,7 +16,6 @@ public class MainController {
     public MainController(PlaceService placeService) {
         this.placeService = placeService;
     }
-
     @GetMapping("/town/{town}")
     public List<PlaceResponse> getPlacesByTown(@RequestParam(required = false) String town) {
         return placeService.findByTown(town);
