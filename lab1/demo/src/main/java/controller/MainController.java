@@ -18,12 +18,12 @@ public class MainController {
     }
 
     @GetMapping
-    public List<Place> getPlacesByTown(@RequestParam(required = false) String town) {
+    public List<PlaceResponse> getPlacesByTown(@RequestParam(required = false) String town) {
         return placeService.findAllPlaces(town);
     }
 
     @GetMapping
-    public List<Place> getPlacesByRating(@RequestParam(required = false) double rating) {
+    public List<PlaceResponse> getPlacesByRating(@RequestParam(required = false) double rating) {
         return placeService.findAllPlaces(rating);
     }
 
