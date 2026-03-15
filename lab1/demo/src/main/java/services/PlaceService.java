@@ -41,6 +41,6 @@ public class PlaceService {
     }
 
     public PlaceDto findPlace(long id) {
-        return null;
+        return toResponse(placeRepository.getById(id));
     }
 }
