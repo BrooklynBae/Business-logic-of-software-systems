@@ -16,15 +16,14 @@ public class MainController {
     public MainController(PlaceService placeService) {
         this.placeService = placeService;
     }
-
-    @GetMapping
+    @GetMapping("/town/{town}")
     public List<PlaceResponse> getPlacesByTown(@RequestParam(required = false) String town) {
-        return placeService.findAllPlaces(town);
+        return placeService.findByTown(town);
     }
 
-    @GetMapping
-    public List<PlaceResponse> getPlacesByRating(@RequestParam(required = false) double rating) {
-        return placeService.findAllPlaces(rating);
+    @GetMapping("/rating")
+    public List<PlaceResponse> getPlacesByRating() {
+        return placeService.findAllSortedByRating();
     }
 
     @GetMapping("/{id}")
