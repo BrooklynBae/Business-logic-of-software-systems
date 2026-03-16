@@ -3,8 +3,10 @@ package dto;
 import data.tables.Owner;
 import data.tables.PlaceType;
 
+import java.util.List;
+
 public class PlaceDto {
-    public PlaceDto(Long id, String name, String town, String description, PlaceType placeType, double rating, Owner owner) {
+    public PlaceDto(Long id, String name, String town, String description, PlaceType placeType, double rating, Owner owner, List<DateDto> availableDates) {
         this.id = id;
         this.name = name;
         this.town = town;
@@ -12,6 +14,7 @@ public class PlaceDto {
         this.placeType = placeType;
         this.rating = rating;
         this.owner = owner;
+        this.availableDates = availableDates;
     }
 
     private Long id;
@@ -21,6 +24,14 @@ public class PlaceDto {
     private PlaceType placeType;
     private double rating;
     private Owner owner;
+    private List<DateDto> availableDates;
+    public List<DateDto> getAvailableDates() {
+        return availableDates;
+    }
+
+    public void setAvailableDates(List<DateDto> availableDates) {
+        this.availableDates = availableDates;
+    }
 
     public Long getId() {
         return id;
