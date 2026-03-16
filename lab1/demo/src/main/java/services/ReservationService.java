@@ -13,5 +13,6 @@ public class ReservationService {
         this.reservationRepository = reservationRepository;
     }
 
+    // прихдит креейт, отдаю дто, фулл заполненную.
     public ReservationDto createReservation()
 }
