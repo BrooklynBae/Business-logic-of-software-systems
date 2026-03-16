@@ -2,13 +2,31 @@ package dto;
 
 import java.time.LocalDate;
 
-public class CreateReservationRequest {
+public class ReservationRequest {
     private LocalDate arrival;
     private LocalDate departure;
     private Integer guestsAmount;
     private Boolean agreedToReservation;
     private Integer petsAmount;
     private Long idOwner;
+    private Long idPlace;
+    private Boolean paymentCompleted;
+
+    public Boolean getPaymentCompleted() {
+        return paymentCompleted;
+    }
+
+    public void setPaymentCompleted(Boolean paymentCompleted) {
+        this.paymentCompleted = paymentCompleted;
+    }
+
+    public Long getIdPlace() {
+        return idPlace;
+    }
+
+    public void setIdPlace(Long idPlace) {
+        this.idPlace = idPlace;
+    }
 
     public Long getIdOwner() {
         return idOwner;
@@ -26,7 +44,7 @@ public class CreateReservationRequest {
         this.petsAmount = petsAmount;
     }
 
-    public CreateReservationRequest() {
+    public ReservationRequest() {
     }
 
     public LocalDate getArrival() {
