@@ -1,7 +1,9 @@
 package controller;
 
+import data.tables.User;
 import dto.ReservationDto;
 import dto.UpdatePaymentRequest;
+import dto.UserDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,12 +23,11 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/photo")
-    public ResponseEntity<ReservationDto> updatePhoto(
+    public ResponseEntity<UserDto> updatePhoto(
             @PathVariable Long id,
             @RequestBody String photo
     ) {
-        ReservationDto response = UserService.updateDate(id, request);
+        UserDto response = UserService.updatePhoto(id, photo);
         return ResponseEntity.ok(response);
     }
-
 }

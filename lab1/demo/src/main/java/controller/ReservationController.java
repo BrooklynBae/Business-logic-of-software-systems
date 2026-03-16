@@ -1,9 +1,6 @@
 package controller;
 
-import dto.CreateReservationRequest;
-import dto.PlaceDto;
-import dto.ReservationDto;
-import dto.UpdatePaymentRequest;
+import dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import services.ReservationService;
@@ -35,7 +32,7 @@ public class ReservationController {
     @PatchMapping("/{id}/dates")
     public ResponseEntity<ReservationDto> updatePayment(
             @PathVariable Long id,
-            @RequestBody UpdatePaymentRequest request
+            @RequestBody UpdateDateRequest request
     ) {
         ReservationDto response = reservationService.updateDate(id, request);
         return ResponseEntity.ok(response);
@@ -44,6 +41,12 @@ public class ReservationController {
     @GetMapping("/{id}")
     public ResponseEntity<ReservationDto> getById(@PathVariable Long id) {
         ReservationDto response = reservationService.findReservation(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/payment/process")
+    public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable Long id) {
+        PaymentResponseDto response = reservationService.processPayment(id);
         return ResponseEntity.ok(response);
     }
 }

@@ -8,7 +8,7 @@ import org.hibernate.annotations.ColumnDefault;
 import java.time.LocalDate;
 
 public class ReservationDto {
-    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, double price, String paymentType, String paymentMethod, Owner owner, String requirements) {
+    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, double price, String paymentType, String paymentMethod, Owner owner) {
         this.id = id;
         this.arrival = arrival;
         this.departure = departure;
@@ -19,7 +19,6 @@ public class ReservationDto {
         this.paymentType = paymentType;
         this.paymentMethod = paymentMethod;
         this.owner = owner;
-        this.requirements = requirements;
     }
 
     private Long id;
@@ -32,15 +31,6 @@ public class ReservationDto {
     private String paymentType;
     private String paymentMethod;
     private Owner owner;
-    private String requirements; // Все требования выполнены, Загрузите фото - напишите письмо
-
-    public String getRequirements() {
-        return requirements;
-    }
-
-    public void setRequirements(String requirements) {
-        this.requirements = requirements;
-    }
 
     public Long getId() {
         return id;
