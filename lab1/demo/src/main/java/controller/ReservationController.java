@@ -14,25 +14,26 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
+    //я возвращаю айди созданного черновика
     @PostMapping
-    public ResponseEntity<ReservationDto> createReservation(@RequestBody CreateReservationRequest request) {
-        ReservationDto response = reservationService.createReservation(request);
+    public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
+        ReservationDto response = reservationService.createDraft(request);
         return ResponseEntity.ok(response);
     }
-
+    //id here - id of created draft reservation
     @PatchMapping("/{id}/payment")
-    public ResponseEntity<ReservationDto> updatePayment(
+    public ResponseEntity<PaymentResponseDto> confirmPayment(
             @PathVariable Long id,
-            @RequestBody UpdatePaymentRequest request
+            @RequestBody PaymentRequest request
     ) {
-        ReservationDto response = reservationService.updatePayment(id, request);
+        PaymentResponseDto response = reservationService.confirmPayment(id, request);
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/dates")
-    public ResponseEntity<ReservationDto> updatePayment(
+    public ResponseEntity<ReservationDto> updateDate(
             @PathVariable Long id,
-            @RequestBody UpdateDateRequest request
+            @RequestBody DateRequest request
     ) {
         ReservationDto response = reservationService.updateDate(id, request);
         return ResponseEntity.ok(response);
@@ -43,7 +44,7 @@ public class ReservationController {
         ReservationDto response = reservationService.findReservation(id);
         return ResponseEntity.ok(response);
     }
-
+    //maybe useless
     @PostMapping("/{id}/payment/process")
     public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable Long id) {
         PaymentResponseDto response = reservationService.processPayment(id);

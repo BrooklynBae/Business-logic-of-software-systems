@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "Place_reservations")
 public class Reservation {
-    protected Reservation(){
+    public Reservation(){
     }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

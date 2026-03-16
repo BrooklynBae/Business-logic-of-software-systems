@@ -1,8 +1,6 @@
 package controller;
 
-import data.tables.User;
 import dto.ReservationDto;
-import dto.UpdatePaymentRequest;
 import dto.UserDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -2,8 +2,8 @@ package dto;
 
 import java.time.LocalDate;
 
-public class UpdateDateRequest {
-    public UpdateDateRequest(LocalDate arrival, LocalDate departure) {
+public class DateRequest {
+    public DateRequest(LocalDate arrival, LocalDate departure) {
         this.arrival = arrival;
         this.departure = departure;
     }
