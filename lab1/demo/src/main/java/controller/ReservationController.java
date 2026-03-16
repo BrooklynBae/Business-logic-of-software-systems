@@ -45,6 +45,4 @@ public class ReservationController {
         ReservationDto response = reservationService.findReservation(id);
         return ResponseEntity.ok(response);
     }
-
-
 }
