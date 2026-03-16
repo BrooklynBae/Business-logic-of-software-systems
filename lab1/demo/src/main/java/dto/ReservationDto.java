@@ -1,6 +1,8 @@
 package dto;
 
 import data.tables.Owner;
+import data.tables.PaymentMethod;
+import data.tables.PaymentType;
 import data.tables.User;
 import jakarta.persistence.Column;
 import org.hibernate.annotations.ColumnDefault;
@@ -8,7 +10,7 @@ import org.hibernate.annotations.ColumnDefault;
 import java.time.LocalDate;
 
 public class ReservationDto {
-    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, double price, String paymentType, String paymentMethod, Owner owner) {
+    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner) {
         this.id = id;
         this.arrival = arrival;
         this.departure = departure;
@@ -28,9 +30,10 @@ public class ReservationDto {
     private Integer petsAmount;
     private User user; // Инфа о том кто бронирует
     private double price;
-    private String paymentType;
-    private String paymentMethod;
+    private PaymentType paymentType;
+    private PaymentMethod paymentMethod;
     private Owner owner;
+
 
     public Long getId() {
         return id;
@@ -88,19 +91,19 @@ public class ReservationDto {
         this.price = price;
     }
 
-    public String getPaymentType() {
+    public PaymentType getPaymentType() {
         return paymentType;
     }
 
-    public void setPaymentType(String paymentType) {
+    public void setPaymentType(PaymentType paymentType) {
         this.paymentType = paymentType;
     }
 
-    public String getPaymentMethod() {
+    public PaymentMethod getPaymentMethod() {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(String paymentMethod) {
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 

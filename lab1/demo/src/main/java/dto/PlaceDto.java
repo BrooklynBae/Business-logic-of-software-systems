@@ -25,7 +25,7 @@ public class PlaceDto {
     private double rating;
     private Owner owner;
     private List<DateDto> availableDates;
-    public List<DateDto> getAvailableDates() {
+    public List<DateDto> getReservedDates() {
         return availableDates;
     }
 

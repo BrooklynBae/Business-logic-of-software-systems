@@ -1,6 +1,7 @@
 package services;
 
 import data.repository.PlaceRepository;
+import data.repository.ReservationRepository;
 import data.tables.Place;
 import data.tables.Reservation;
 import dto.DateDto;
@@ -13,13 +14,24 @@ import java.util.List;
 public class PlaceService {
 
     private final PlaceRepository placeRepository;
+    private final ReservationRepository reservationRepository;
 
-    public PlaceService(PlaceRepository placeRepository) {
+    public PlaceService(PlaceRepository placeRepository, ReservationRepository reservationRepository) {
         this.placeRepository = placeRepository;
+        this.reservationRepository = reservationRepository;
     }
 
-    private DateDto getDates(Reservation reservation) {
-        return new DateDto(reservation.getArrival(), reservation.getDeparture());
+    private DateDto toDateDto(Reservation reservation) {
+        return new DateDto(
+                reservation.getArrival(),
+                reservation.getDeparture()
+        );
+    }
+
+    public List<DateDto> findAllReservedDates(Long placeId) {
+        return reservationRepository.findByPlaceId(placeId).stream()
+                .map(reservation -> toDateDto(reservation))
+                .toList();
     }
 
     private PlaceDto toResponse(Place place) {
@@ -30,7 +42,8 @@ public class PlaceService {
                 place.getDescription(),
                 place.getPlaceType(),
                 place.getRating(),
-                place.getOwner()
+                place.getOwner(),
+                findAllReservedDates(place.getId())
         );
     }
     public List<PlaceDto> findByTown(String town) {
