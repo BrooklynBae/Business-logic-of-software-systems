@@ -33,7 +33,7 @@ public class ReservationDto {
     private String paymentMethod;
     private Owner owner;
     private String requirements; // Все требования выполнены, Загрузите фото - напишите письмо
-
+//TODO:requirenments
     public String getRequirements() {
         return requirements;
     }

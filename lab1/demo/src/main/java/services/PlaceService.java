@@ -2,6 +2,8 @@ package services;
 
 import data.repository.PlaceRepository;
 import data.tables.Place;
+import data.tables.Reservation;
+import dto.DateDto;
 import dto.PlaceDto;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,10 @@ public class PlaceService {
 
     public PlaceService(PlaceRepository placeRepository) {
         this.placeRepository = placeRepository;
+    }
+
+    private DateDto getDates(Reservation reservation) {
+        return new DateDto(reservation.getArrival(), reservation.getDeparture());
     }
 
     private PlaceDto toResponse(Place place) {
