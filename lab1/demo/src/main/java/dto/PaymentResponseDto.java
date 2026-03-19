@@ -1,7 +1,7 @@
 package dto;
 
 public class PaymentResponseDto {
-    private Long draftResId;
+    private Long reservationId;
     private boolean available;
     private boolean success;
     private String message;
@@ -9,19 +9,19 @@ public class PaymentResponseDto {
     public PaymentResponseDto() {
     }
 
-    public PaymentResponseDto(Long draftResId, boolean available, boolean success, String message) {
-        this.draftResId = draftResId;
+    public PaymentResponseDto(Long reservationId, boolean available, boolean success, String message) {
+        this.reservationId = reservationId;
         this.available = available;
         this.success = success;
         this.message = message;
     }
 
-    public Long getDraftResId() {
-        return draftResId;
+    public Long getReservationId() {
+        return reservationId;
     }
 
-    public void setDraftResId(Long userId) {
-        this.draftResId = userId;
+    public void setReservationId(Long userId) {
+        this.reservationId = userId;
     }
 
     public boolean isAvailable() {

@@ -12,6 +12,8 @@ import dto.ReservationDto;
 import org.springframework.stereotype.Service;
 import services.utils.ReservationDraftStorage;
 
+import java.time.LocalDate;
+
 @Service
 public class ReservationService {
 
@@ -47,28 +49,18 @@ public class ReservationService {
     }
 
     public Long createDraft(ReservationRequest request) {
-        return draftStorage.saveDraft(request);
+
+        return draftStorage.saveDraft(request);  //check info, DATES, cnt price
     }
 
-    //id draft res
-    //move to payment service
-    public PaymentResponseDto confirmPayment(Long id, PaymentRequest paymentRequest) {
-        PaymentResponseDto paymentResponseDto = new PaymentResponseDto();
-        if (paymentRequest.getPaymentType().equals(PaymentType.NOW)) {
-            //random
-            //if success ->
-                paymentResponseDto.setDraftResId(id);//maybe useless
-                paymentResponseDto.setAvailable(true);
-                paymentResponseDto.setSuccess(true);
-                paymentResponseDto.setMessage("ORA ORA ORA ORA ORA");
-        }
-        draftStorage.getDraft(id).setPaymentCompleted(true);
-        return paymentResponseDto;
+    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Long idPlace) {
+        Double pricePerNight = placeRepository.getReferenceById(idPlace).getPricePerNight();
+
     }
+
 
     //id draft res
     public ReservationDto confirmReservation(Long id) {
-        //will be called when payment is confirmed
         ReservationRequest request = draftStorage.getDraft(id);
 
         if (request == null) {
@@ -81,7 +73,7 @@ public class ReservationService {
         reservation.setDeparture(request.getDeparture());
         reservation.setGuestsAmount(request.getGuestsAmount());
         reservation.setPetsAmount(request.getPetsAmount());
-        reservation.setPrice();//logic for price
+        reservation.setPrice();
         reservation.setPlaceType(placeRepository.getReferenceById(request.getIdPlace()).getPlaceType());
         reservation.setPaymentType(request);//как то блять связать Reservation request from draft storage and payment response
 
