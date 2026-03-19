@@ -29,6 +29,9 @@ public class Place {
     @ColumnDefault("0")
     private double pricePerNight;
 
+    @Column(name = "max_guests", nullable = false, unique = false)
+    private int maxGuests;
+
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
     private double rating;
@@ -99,5 +102,13 @@ public class Place {
 
     public void setPricePerNight(double pricePerNight) {
         this.pricePerNight = pricePerNight;
+    }
+
+    public int getMaxGuests() {
+        return maxGuests;
+    }
+
+    public void setMaxGuests(int maxGuests) {
+        this.maxGuests = maxGuests;
     }
 }
