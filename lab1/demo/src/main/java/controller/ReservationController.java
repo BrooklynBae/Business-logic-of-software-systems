@@ -34,11 +34,11 @@ public class ReservationController {
     }
 
     @PatchMapping("/{id}/dates")
-    public ResponseEntity<ReservationDto> updateDate(
+    public ResponseEntity<ReservationResponse> updateDate(
             @PathVariable Long id,
             @RequestBody DateRequest request
     ) {
-        ReservationDto response = reservationService.updateDate(id, request);
+        ReservationResponse response = reservationService.updateDate(id, request);
         return ResponseEntity.ok(response);
     }
 

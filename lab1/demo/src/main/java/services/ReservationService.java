@@ -5,15 +5,13 @@ import data.repository.ReservationRepository;
 import data.repository.UserRepository;
 import data.tables.PaymentType;
 import data.tables.Reservation;
-import dto.PaymentRequest;
-import dto.PaymentResponseDto;
-import dto.ReservationRequest;
-import dto.ReservationDto;
+import dto.*;
 import org.springframework.stereotype.Service;
 import services.utils.ReservationDraftStorage;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 public class ReservationService {
@@ -45,8 +43,49 @@ public class ReservationService {
         );
     }
 
+    private ReservationResponse toReservationResponse(ReservationRequest reservation,Long id, double price) {
+        return new ReservationResponse(
+                id,
+                reservation.getArrival(),
+                reservation.getDeparture(),
+                reservation.getGuestsAmount(),
+                reservation.getPetsAmount(),
+                price,
+                reservation.getIdPlace()
+        );
+    }
+
     public ReservationDto findReservation(long id) {
         return toReservationDto(reservationRepository.getReferenceById(id));
+    }
+
+    public ReservationResponse updateDate(Long id, DateRequest dateRequest) {
+        ReservationRequest request = draftStorage.getDraft(id);
+
+        if (request == null) {
+            throw new RuntimeException("Draft not found or expired");
+        }
+
+        List<Reservation> conflicts = reservationRepository.findByPlaceIdAndArrivalLessThanAndDepartureGreaterThan(
+                request.getIdPlace(),
+                dateRequest.getDeparture(),
+                dateRequest.getArrival());
+
+        if (!conflicts.isEmpty()) {
+            String conflictPeriods = conflicts.stream()
+                    .map(r -> "[" + r.getArrival() + " - " + r.getDeparture() + "]")
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("");
+
+            throw new RuntimeException("Selected dates are already reserved: " + conflictPeriods);
+        }
+
+        request.setArrival(dateRequest.getArrival());
+        request.setDeparture(dateRequest.getDeparture());
+
+        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getIdPlace());
+
+        return toReservationResponse(request, id, price);
     }
 
     public Long createDraft(ReservationRequest request) {
@@ -66,15 +105,15 @@ public class ReservationService {
     //id draft res
     public ReservationDto confirmReservation(Long id) {
         ReservationRequest request = draftStorage.getDraft(id);
+        if (request == null) {
+            throw new RuntimeException("Draft not found or expired");
+        }
         Double price = countPrice(request.getArrival(),
                 request.getDeparture(),
                 request.getGuestsAmount(),
                 request.getPetsAmount(),
                 request.getIdPlace());
 
-        if (request == null) {
-            throw new RuntimeException("Draft not found or expired");
-        }
         Reservation reservation = new Reservation();
         reservation.setUser(userRepository.getReferenceById(request.getIdOwner()));
         reservation.setPlace(placeRepository.getReferenceById(request.getIdPlace()));
@@ -88,3 +127,5 @@ public class ReservationService {
 
     }
 }
+
+//TODO: make res model?
