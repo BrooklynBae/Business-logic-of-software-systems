@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import services.utils.ReservationDraftStorage;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class ReservationService {
@@ -50,18 +51,26 @@ public class ReservationService {
 
     public Long createDraft(ReservationRequest request) {
 
-        return draftStorage.saveDraft(request);  //check info, DATES, cnt price
+        return draftStorage.saveDraft(request);  //check info, DATES, cnt price, max guests
     }
 
     private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Long idPlace) {
-        Double pricePerNight = placeRepository.getReferenceById(idPlace).getPricePerNight();
-
+        double pricePerNight = placeRepository.getReferenceById(idPlace).getPricePerNight();
+        long totalDays = ChronoUnit.DAYS.between(arrival, departure);
+        double guestCoeff = 1 + (guestsAmount - 1) * 0.5;
+        double petsCoeff = 1 + (petsAmount - 1) * 0.1;
+        return pricePerNight * totalDays * guestCoeff * petsCoeff;
     }
 
 
     //id draft res
     public ReservationDto confirmReservation(Long id) {
         ReservationRequest request = draftStorage.getDraft(id);
+        Double price = countPrice(request.getArrival(),
+                request.getDeparture(),
+                request.getGuestsAmount(),
+                request.getPetsAmount(),
+                request.getIdPlace());
 
         if (request == null) {
             throw new RuntimeException("Draft not found or expired");
@@ -73,7 +82,7 @@ public class ReservationService {
         reservation.setDeparture(request.getDeparture());
         reservation.setGuestsAmount(request.getGuestsAmount());
         reservation.setPetsAmount(request.getPetsAmount());
-        reservation.setPrice();
+        reservation.setPrice(price);
         reservation.setPlaceType(placeRepository.getReferenceById(request.getIdPlace()).getPlaceType());
         reservation.setPaymentType(request);//как то блять связать Reservation request from draft storage and payment response
 
