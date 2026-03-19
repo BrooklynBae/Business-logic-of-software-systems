@@ -10,15 +10,6 @@ public class ReservationRequest {
     private Integer petsAmount;
     private Long idOwner;
     private Long idPlace;
-//    private Boolean paymentCompleted;
-//
-//    public Boolean getPaymentCompleted() {
-//        return paymentCompleted;
-//    }
-//
-//    public void setPaymentCompleted(Boolean paymentCompleted) {
-//        this.paymentCompleted = paymentCompleted;
-//    }
 
     public Long getIdPlace() {
         return idPlace;

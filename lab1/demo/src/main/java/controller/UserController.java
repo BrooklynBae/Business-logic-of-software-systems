@@ -17,7 +17,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getById(@PathVariable Long id) {
-        ReservationDto response = reservationService.findReservation(id);
+        UserDto response = userService.findById(id);
         return ResponseEntity.ok(response);
     } //find user or users res?
 
@@ -26,7 +26,7 @@ public class UserController {
             @PathVariable Long id,
             @RequestBody String photo
     ) {
-        UserDto response = UserService.updatePhoto(id, photo);
+        UserDto response = userService.updatePhoto(id, photo);
         return ResponseEntity.ok(response);
     }
 }

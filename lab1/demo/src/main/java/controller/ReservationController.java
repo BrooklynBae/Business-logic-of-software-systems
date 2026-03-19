@@ -3,15 +3,18 @@ package controller;
 import dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import services.PaymentService;
 import services.ReservationService;
 
 @RestController
 @RequestMapping("/reservation")
 public class ReservationController {
     private final ReservationService reservationService;
+    private final PaymentService paymentService;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(ReservationService reservationService, PaymentService paymentService) {
         this.reservationService = reservationService;
+        this.paymentService = paymentService;
     }
 
     //я возвращаю айди созданного черновика and price
@@ -26,7 +29,7 @@ public class ReservationController {
             @PathVariable Long id,
             @RequestBody PaymentRequest request
     ) {
-        PaymentResponseDto response = reservationService.confirmPayment(id, request);
+        PaymentResponseDto response = paymentService.confirmPayment(id, request);
         return ResponseEntity.ok(response);
     }
 
