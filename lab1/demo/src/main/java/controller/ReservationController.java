@@ -14,7 +14,7 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-    //я возвращаю айди созданного черновика
+    //я возвращаю айди созданного черновика and price
     @PostMapping
     public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
         ReservationDto response = reservationService.createDraft(request);

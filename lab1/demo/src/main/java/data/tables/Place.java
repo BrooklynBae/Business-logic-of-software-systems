@@ -25,6 +25,10 @@ public class Place {
     @Column(name = "type", length = 25, nullable = false, unique = false)
     private PlaceType placeType;
 
+    @Column(name = "price_per_night", nullable = false, unique = false)
+    @ColumnDefault("0")
+    private double pricePerNight;
+
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
     private double rating;
@@ -87,5 +91,13 @@ public class Place {
 
     public void setOwner(Owner owner) {
         this.owner = owner;
+    }
+
+    public double getPricePerNight() {
+        return pricePerNight;
+    }
+
+    public void setPricePerNight(double pricePerNight) {
+        this.pricePerNight = pricePerNight;
     }
 }
