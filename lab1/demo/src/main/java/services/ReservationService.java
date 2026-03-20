@@ -36,6 +36,7 @@ public class ReservationService {
                 reservation.getGuestsAmount(),
                 reservation.getPetsAmount(),
                 reservation.getUser(),
+                reservation.getPlace(),
                 reservation.getPrice(),
                 reservation.getPaymentType(),
                 reservation.getPaymentMethod(),
@@ -43,33 +44,62 @@ public class ReservationService {
         );
     }
 
-    private ReservationResponse toReservationResponse(ReservationRequest reservation,Long id, double price) {
-        return new ReservationResponse(
-                id,
-                reservation.getArrival(),
-                reservation.getDeparture(),
-                reservation.getGuestsAmount(),
-                reservation.getPetsAmount(),
-                price,
-                reservation.getIdPlace()
-        );
-    }
-
     public ReservationDto findReservation(long id) {
         return toReservationDto(reservationRepository.getReferenceById(id));
     }
 
-    public ReservationResponse updateDate(Long id, DateRequest dateRequest) {
-        ReservationRequest request = draftStorage.getDraft(id);
+    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
+        ReservationDto request = draftStorage.getDraft(id);
 
         if (request == null) {
             throw new RuntimeException("Draft not found or expired");
         }
 
+        checkDates(request.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
+
+        request.setArrival(dateRequest.getArrival());
+        request.setDeparture(dateRequest.getDeparture());
+
+        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getIdPlace());
+        request.setPrice(price);
+
+        return request;
+    }
+
+    public ReservationDto createDraft(ReservationRequest request) {
+        if (request.getGuestsAmount() > placeRepository.getReferenceById(request.getIdPlace()).getMaxGuests()) {
+            throw new RuntimeException("This place can not accommodate " + request.getGuestsAmount() + "guests. Limit - " + placeRepository.getReferenceById(request.getIdPlace()).getMaxGuests());
+        }
+
+        checkDates(request.getIdPlace(), request.getArrival(), request.getDeparture());
+
+        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getIdPlace());
+
+        ReservationDto reservationDto = new ReservationDto(
+                null,
+                request.getArrival(),
+                request.getDeparture(),
+                request.getGuestsAmount(),
+                request.getPetsAmount(),
+                userRepository.getReferenceById(request.getIdOwner()),
+                placeRepository.getReferenceById(request.getIdPlace()),
+                price,
+                null,
+                null,
+                placeRepository.getReferenceById(request.getIdPlace()).getOwner()
+        );
+
+        Long id = draftStorage.saveDraft(reservationDto);  //check info, DATES, cnt price, max guests
+        reservationDto.setId(id);
+
+        return reservationDto;
+    }
+
+    private void checkDates(Long idPlace, LocalDate arrival, LocalDate departure) {
         List<Reservation> conflicts = reservationRepository.findByPlaceIdAndArrivalLessThanAndDepartureGreaterThan(
-                request.getIdPlace(),
-                dateRequest.getDeparture(),
-                dateRequest.getArrival());
+                idPlace,
+                departure,
+                arrival);
 
         if (!conflicts.isEmpty()) {
             String conflictPeriods = conflicts.stream()
@@ -79,18 +109,6 @@ public class ReservationService {
 
             throw new RuntimeException("Selected dates are already reserved: " + conflictPeriods);
         }
-
-        request.setArrival(dateRequest.getArrival());
-        request.setDeparture(dateRequest.getDeparture());
-
-        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getIdPlace());
-
-        return toReservationResponse(request, id, price);
-    }
-
-    public Long createDraft(ReservationRequest request) {
-
-        return draftStorage.saveDraft(request);  //check info, DATES, cnt price, max guests
     }
 
     private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Long idPlace) {
@@ -128,4 +146,3 @@ public class ReservationService {
     }
 }
 
-//TODO: make res model?
