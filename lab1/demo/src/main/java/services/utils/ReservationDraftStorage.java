@@ -1,5 +1,6 @@
 package services.utils;
 
+import dto.ReservationDto;
 import dto.ReservationRequest;
 import org.springframework.stereotype.Component;
 
@@ -9,15 +10,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class ReservationDraftStorage {
 
-    private final Map<Long, ReservationRequest> drafts = new ConcurrentHashMap<>();
+    private final Map<Long, ReservationDto> drafts = new ConcurrentHashMap<>();
 
-    public Long saveDraft(ReservationRequest request) {
-        Long draftId = request.getIdOwner();
+    public Long saveDraft(ReservationDto request) {
+        Long draftId = request.getUser().getId();
         drafts.put(draftId, request);
         return draftId;
     }
 
-    public ReservationRequest getDraft(Long draftId) {
+    public ReservationDto getDraft(Long draftId) {
         return drafts.get(draftId);
     }
 

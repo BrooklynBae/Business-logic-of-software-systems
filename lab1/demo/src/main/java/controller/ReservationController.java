@@ -16,14 +16,14 @@ public class ReservationController {
         this.reservationService = reservationService;
         this.paymentService = paymentService;
     }
-
+    //сначала create draft -> payment = null, потом confirm payment ->
     //я возвращаю айди созданного черновика and price
     @PostMapping
     public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
         ReservationDto response = reservationService.createDraft(request);
         return ResponseEntity.ok(response);
     }
-    //id here - id of created draft reservation
+    //id here - id of created draft reservation. обновить или задать в первый раз
     @PatchMapping("/{id}/payment")
     public ResponseEntity<PaymentResponseDto> confirmPayment(
             @PathVariable Long id,
@@ -32,13 +32,13 @@ public class ReservationController {
         PaymentResponseDto response = paymentService.confirmPayment(id, request);
         return ResponseEntity.ok(response);
     }
-
+//айди draft
     @PatchMapping("/{id}/dates")
-    public ResponseEntity<ReservationResponse> updateDate(
+    public ResponseEntity<ReservationDto> updateDate(
             @PathVariable Long id,
             @RequestBody DateRequest request
     ) {
-        ReservationResponse response = reservationService.updateDate(id, request);
+        ReservationDto response = reservationService.updateDate(id, request);
         return ResponseEntity.ok(response);
     }
 

@@ -1,22 +1,20 @@
 package dto;
 
-import data.tables.Owner;
-import data.tables.PaymentMethod;
-import data.tables.PaymentType;
-import data.tables.User;
+import data.tables.*;
 import jakarta.persistence.Column;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
 public class ReservationDto {
-    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner) {
+    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, Place place, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner) {
         this.id = id;
         this.arrival = arrival;
         this.departure = departure;
         this.guestsAmount = guestsAmount;
         this.petsAmount = petsAmount;
         this.user = user;
+        this.place = place;
         this.price = price;
         this.paymentType = paymentType;
         this.paymentMethod = paymentMethod;
@@ -29,6 +27,7 @@ public class ReservationDto {
     private Integer guestsAmount;
     private Integer petsAmount;
     private User user; // Инфа о том кто бронирует
+    private Place place;
     private double price;
     private PaymentType paymentType;
     private PaymentMethod paymentMethod;
@@ -81,6 +80,14 @@ public class ReservationDto {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Place getPlace() {
+        return place;
+    }
+
+    public void setPlace(Place place) {
+        this.place = place;
     }
 
     public double getPrice() {
