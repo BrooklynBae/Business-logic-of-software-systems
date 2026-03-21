@@ -34,13 +34,12 @@ public class PaymentService {
         return reservationDto;
     }
 
-    public ReservationDto processPayment(Long id, PaymentRequest paymentRequest) {
-
+    public PaymentResponseDto processPayment(Long id) {
         PaymentResponseDto paymentResponseDto = new PaymentResponseDto();
 
-        ReservationDto reservationRequest = draftStorage.getDraft(id);
-        Long idOwner = reservationRequest.getOwner().getId();
-        User user = userRepository.getReferenceById(idOwner);
+        ReservationDto reservationDto = draftStorage.getDraft(id);
+
+        User user = reservationDto.getUser();
 
         if (user.getPhoto().isBlank()) {
             paymentResponseDto.setReservationId(id);// id draft
@@ -50,24 +49,21 @@ public class PaymentService {
             return paymentResponseDto;
         } //no email?
 
-        if (paymentRequest.getPaymentType().equals(PaymentType.NOW)) {
+        if (reservationDto.getPaymentType().equals(PaymentType.NOW)) {
             if (random.nextBoolean()) {
-                paymentResponseDto.setReservationId(id);// id reservation
                 paymentResponseDto.setAvailable(true);
                 paymentResponseDto.setSuccess(true);
                 paymentResponseDto.setMessage("ORA ORA ORA ORA ORA");
-
-                draftStorage.removeDraft(id);
             } else {
                 paymentResponseDto.setReservationId(id); //id draft
                 paymentResponseDto.setAvailable(true);
                 paymentResponseDto.setSuccess(false);
                 paymentResponseDto.setMessage("Payment failed, you're too poor");
+                return paymentResponseDto;
             }
-            reservationService.confirmReservation(id);
+            paymentResponseDto.setReservationId(reservationService.confirmReservation(id));
+            draftStorage.removeDraft(id);
         }
-        //setId = id Reservatikon
-        //draftStorage.getDraft(id).setPaymentCompleted(true);
         return paymentResponseDto;
     }
 }
