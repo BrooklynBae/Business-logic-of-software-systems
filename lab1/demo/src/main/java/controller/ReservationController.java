@@ -47,10 +47,10 @@ public class ReservationController {
         ReservationDto response = reservationService.findReservation(id);
         return ResponseEntity.ok(response);
     }
-    //maybe useless
+
     @PostMapping("/{id}/payment/process")
     public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable Long id) {
-        PaymentResponseDto response = reservationService.processPayment(id);
+        PaymentResponseDto response = paymentService.processPayment(id);
         return ResponseEntity.ok(response);
     }
 }

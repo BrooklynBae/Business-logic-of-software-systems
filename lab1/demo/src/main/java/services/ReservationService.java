@@ -60,7 +60,7 @@ public class ReservationService {
         request.setArrival(dateRequest.getArrival());
         request.setDeparture(dateRequest.getDeparture());
 
-        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getIdPlace());
+        double price = countPrice(request.getArrival(), request.getDeparture(), request.getGuestsAmount(), request.getPetsAmount(), request.getPlace().getId());
         request.setPrice(price);
 
         return request;
@@ -120,29 +120,29 @@ public class ReservationService {
     }
 
 
-    //id draft res
-    public ReservationDto confirmReservation(Long id) {
-        ReservationRequest request = draftStorage.getDraft(id);
-        if (request == null) {
+    //id res entity
+    protected Long confirmReservation(Long id) {
+        ReservationDto reservationDto = draftStorage.getDraft(id);
+
+        if (reservationDto == null) {
             throw new RuntimeException("Draft not found or expired");
         }
-        Double price = countPrice(request.getArrival(),
-                request.getDeparture(),
-                request.getGuestsAmount(),
-                request.getPetsAmount(),
-                request.getIdPlace());
 
         Reservation reservation = new Reservation();
-        reservation.setUser(userRepository.getReferenceById(request.getIdOwner()));
-        reservation.setPlace(placeRepository.getReferenceById(request.getIdPlace()));
-        reservation.setArrival(request.getArrival());
-        reservation.setDeparture(request.getDeparture());
-        reservation.setGuestsAmount(request.getGuestsAmount());
-        reservation.setPetsAmount(request.getPetsAmount());
-        reservation.setPrice(price);
-        reservation.setPlaceType(placeRepository.getReferenceById(request.getIdPlace()).getPlaceType());
-        reservation.setPaymentType(request);//как то блять связать Reservation request from draft storage and payment response
+        reservation.setUser(reservationDto.getUser());
+        reservation.setPlace(reservationDto.getPlace());
+        reservation.setArrival(reservationDto.getArrival());
+        reservation.setDeparture(reservationDto.getDeparture());
+        reservation.setGuestsAmount(reservationDto.getGuestsAmount());
+        reservation.setPetsAmount(reservationDto.getPetsAmount());
+        reservation.setPrice(reservationDto.getPrice());
+        reservation.setPlaceType(placeRepository.getReferenceById(reservationDto.getPlace().getId()).getPlaceType());
+        reservation.setPaymentType(reservationDto.getPaymentType());
+        reservation.setPaymentMethod(reservationDto.getPaymentMethod());
 
+        reservationRepository.save(reservation);
+
+        return reservation.getId();
     }
 }
 
