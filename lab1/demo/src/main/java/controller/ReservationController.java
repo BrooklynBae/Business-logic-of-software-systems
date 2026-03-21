@@ -25,11 +25,11 @@ public class ReservationController {
     }
     //id here - id of created draft reservation. обновить или задать в первый раз
     @PatchMapping("/{id}/payment")
-    public ResponseEntity<PaymentResponseDto> confirmPayment(
+    public ResponseEntity<ReservationDto> updatePaymentData(
             @PathVariable Long id,
             @RequestBody PaymentRequest request
     ) {
-        PaymentResponseDto response = paymentService.confirmPayment(id, request);
+        ReservationDto response = paymentService.updatePaymentData(id, request);
         return ResponseEntity.ok(response);
     }
 //айди draft

@@ -5,7 +5,7 @@ import data.tables.PaymentType;
 import data.tables.User;
 import dto.PaymentRequest;
 import dto.PaymentResponseDto;
-import dto.ReservationRequest;
+import dto.ReservationDto;
 import org.springframework.stereotype.Service;
 import services.utils.ReservationDraftStorage;
 
@@ -25,12 +25,21 @@ public class PaymentService {
         this.userRepository = userRepository;
     }
 
-    public PaymentResponseDto confirmPayment(Long id, PaymentRequest paymentRequest) {
+    public ReservationDto updatePaymentData(Long id, PaymentRequest request) {
+        ReservationDto reservationDto = draftStorage.getDraft(id);
+
+        reservationDto.setPaymentMethod(request.getPaymentMethod());
+        reservationDto.setPaymentType(request.getPaymentType());
+
+        return reservationDto;
+    }
+
+    public ReservationDto processPayment(Long id, PaymentRequest paymentRequest) {
 
         PaymentResponseDto paymentResponseDto = new PaymentResponseDto();
 
-        ReservationRequest reservationRequest = draftStorage.getDraft(id);
-        Long idOwner = reservationRequest.getIdOwner();
+        ReservationDto reservationRequest = draftStorage.getDraft(id);
+        Long idOwner = reservationRequest.getOwner().getId();
         User user = userRepository.getReferenceById(idOwner);
 
         if (user.getPhoto().isBlank()) {
