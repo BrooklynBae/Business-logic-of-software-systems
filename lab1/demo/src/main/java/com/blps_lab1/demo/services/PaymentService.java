@@ -63,6 +63,8 @@ public class PaymentService {
             }
             paymentResponseDto.setReservationId(reservationService.confirmReservation(id));
             draftStorage.removeDraft(id);
+        } else {
+            draftStorage.removeDraft(id);
         }
         return paymentResponseDto;
     }

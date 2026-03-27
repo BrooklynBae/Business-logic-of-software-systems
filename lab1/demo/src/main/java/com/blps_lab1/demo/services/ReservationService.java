@@ -93,7 +93,7 @@ public class ReservationService {
                 placeRepository.getReferenceById(request.getIdPlace()).getOwner()
         );
 
-        Long id = draftStorage.saveDraft(reservationDto);  //check info, DATES, cnt price, max guests
+        Long id = draftStorage.saveDraft(reservationDto);
         reservationDto.setId(id);
 
         return reservationDto;
@@ -104,6 +104,10 @@ public class ReservationService {
                 idPlace,
                 departure,
                 arrival);
+
+        if (arrival.isAfter(departure)) {
+            throw new RuntimeException("Arrival date later than departure");
+        }
 
         if (!conflicts.isEmpty()) {
             String conflictPeriods = conflicts.stream()
