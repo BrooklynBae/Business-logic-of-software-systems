@@ -1,0 +1,232 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-03-22T20:00:00.000Z",
+  "resources": [
+    {
+      "_id": "wrk_blps_lab1",
+      "_type": "workspace",
+      "name": "BLPS Lab1 REST Tests",
+      "description": "Набор запросов для тестирования публичных REST-интерфейсов модуля бронирования.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_blps_base",
+      "_type": "environment",
+      "parentId": "wrk_blps_lab1",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "town": "Moscow",
+        "place_id": 1,
+        "owner_id": 1,
+        "user_id": 1,
+        "reservation_id": 1,
+        "arrival": "2026-04-17",
+        "departure": "2026-04-19",
+        "guests_amount": 2,
+        "pets_amount": 1,
+        "agreed_to_reservation": true,
+        "paymentType": "NOW",
+        "paymentMethod": "CARD",
+        "photo_url": "https://example.com/photo.jpg"
+      }
+    },
+    {
+      "_id": "fld_search",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "1. Поиск и просмотр жилья",
+      "description": "Шаги BPMN: выбор города или популярного жилья, просмотр информации по объекту"
+    },
+    {
+      "_id": "fld_reservation",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "2. Бронирование и оплата",
+      "description": "Шаги BPMN: создание черновика брони, правка дат, добавление оплаты, обработка оплаты, финальная проверка"
+    },
+    {
+      "_id": "fld_user",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "3. Пользователь",
+      "description": "Запросы к публичному интерфейсу пользователя"
+    },
+    {
+      "_id": "req_places_by_town",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET places by town",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/town/{{ _.town }}",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_places_by_rating",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET places by rating",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/rating",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_place_by_id",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET place by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/{{ _.place_id }}",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_create_reservation",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "POST create reservation draft",
+      "method": "POST",
+      "url": "{{ _.base_url }}/reservation",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"{{ _.arrival }}\",\n  \"departure\": \"{{ _.departure }}\",\n  \"guestsAmount\": {{ _.guests_amount }},\n  \"agreedToReservation\": {{ _.agreed_to_reservation }},\n  \"petsAmount\": {{ _.pets_amount }},\n  \"idOwner\": {{ _.owner_id }},\n  \"idPlace\": {{ _.place_id }}\n}"
+      }
+    },
+    {
+      "_id": "req_get_reservation",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "GET reservation by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_patch_dates",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "PATCH reservation dates",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}/dates",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"{{ _.arrival }}\",\n  \"departure\": \"{{ _.departure }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_patch_payment",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "PATCH reservation payment data",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}/payment",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"{{ _.paymentType }}\",\n  \"paymentMethod\": \"{{ _.paymentMethod }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_process_payment",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "POST process payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}/payment/process",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_get_user",
+      "_type": "request",
+      "parentId": "fld_user",
+      "name": "GET user by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/user/{{ _.user_id }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_patch_user_photo",
+      "_type": "request",
+      "parentId": "fld_user",
+      "name": "PATCH user photo",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/user/{{ _.user_id }}/photo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "text/plain",
+        "text": "{{ _.photo_url }}"
+      }
+    }
+  ]
+}

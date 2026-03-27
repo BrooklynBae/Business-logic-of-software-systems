@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "Users")
 public class User {
-    protected User(){}
+    public User(){}
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

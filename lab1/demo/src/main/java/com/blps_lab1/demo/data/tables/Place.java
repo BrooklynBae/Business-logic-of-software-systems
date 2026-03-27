@@ -7,7 +7,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "Places")
 public class Place {
 
-    protected Place(){}
+    public Place(){}
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

@@ -53,4 +53,16 @@ public class ReservationController {
         PaymentResponseDto response = paymentService.processPayment(id);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/entity")
+    public ResponseEntity<ReservationDto> createReservationEntity(@RequestBody CreateReservationEntityRequest request) {
+        ReservationDto response = reservationService.createReservationEntity(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        reservationService.deleteReservation(id);
+        return ResponseEntity.noContent().build();
+    }
 }

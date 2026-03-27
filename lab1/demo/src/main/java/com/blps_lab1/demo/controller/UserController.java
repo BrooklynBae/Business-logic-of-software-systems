@@ -1,5 +1,6 @@
 package com.blps_lab1.demo.controller;
 
+import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,16 @@ public class UserController {
         this.userService = userService;
     }
 
+    @PostMapping
+    public ResponseEntity<UserDto> create(@RequestBody CreateUserRequest request) {
+        UserDto response = userService.create(request);
+        return ResponseEntity.ok(response);
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        userService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getById(@PathVariable Long id) {
         UserDto response = userService.findById(id);

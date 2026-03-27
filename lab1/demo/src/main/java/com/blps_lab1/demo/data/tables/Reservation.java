@@ -2,6 +2,7 @@ package com.blps_lab1.demo.data.tables;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalDate;
 
@@ -31,7 +32,7 @@ public class Reservation {
     private Integer guestsAmount;
 
     @Column(name = "pets_amount", nullable = false)
-    @Positive
+    @PositiveOrZero
     private Integer petsAmount;
 
     @Column(name = "price", nullable = false)

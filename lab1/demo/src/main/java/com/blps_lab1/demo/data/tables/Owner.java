@@ -7,7 +7,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "Place_owners")
 public class Owner {
 
-    protected Owner(){}
+    public Owner(){}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

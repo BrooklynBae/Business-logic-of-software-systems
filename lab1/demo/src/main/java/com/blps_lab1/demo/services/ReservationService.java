@@ -1,5 +1,8 @@
 package com.blps_lab1.demo.services;
 
+import com.blps_lab1.demo.data.tables.Place;
+import com.blps_lab1.demo.data.tables.User;
+import com.blps_lab1.demo.dto.CreateReservationEntityRequest;
 import com.blps_lab1.demo.dto.DateRequest;
 import com.blps_lab1.demo.dto.ReservationDto;
 import com.blps_lab1.demo.dto.ReservationRequest;
@@ -144,6 +147,51 @@ public class ReservationService {
         reservationRepository.save(reservation);
 
         return reservation.getId();
+    }
+
+    public void deleteReservation(Long id) {
+        if (!reservationRepository.existsById(id)) {
+            throw new RuntimeException("Reservation not found with id = " + id);
+        }
+        reservationRepository.deleteById(id);
+    }
+
+    public ReservationDto createReservationEntity(CreateReservationEntityRequest request) {
+        Place place = placeRepository.findById(request.getPlaceId())
+                .orElseThrow(() -> new RuntimeException("Place not found with id = " + request.getPlaceId()));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id = " + request.getUserId()));
+
+        if (request.getGuestsAmount() > place.getMaxGuests()) {
+            throw new RuntimeException("This place can not accommodate " + request.getGuestsAmount()
+                    + " guests. Limit - " + place.getMaxGuests());
+        }
+
+        checkDates(place.getId(), request.getArrival(), request.getDeparture());
+
+        Reservation reservation = new Reservation();
+        reservation.setPlace(place);
+        reservation.setUser(user);
+        reservation.setArrival(request.getArrival());
+        reservation.setDeparture(request.getDeparture());
+        reservation.setGuestsAmount(request.getGuestsAmount());
+        reservation.setPetsAmount(request.getPetsAmount());
+        reservation.setPlaceType(place.getPlaceType());
+        reservation.setPaymentType(request.getPaymentType());
+        reservation.setPaymentMethod(request.getPaymentMethod());
+
+        double price = countPrice(
+                request.getArrival(),
+                request.getDeparture(),
+                request.getGuestsAmount(),
+                request.getPetsAmount(),
+                place.getId()
+        );
+        reservation.setPrice(price);
+
+        Reservation saved = reservationRepository.save(reservation);
+        return toReservationDto(saved);
     }
 }
 
