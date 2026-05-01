@@ -1,6 +1,10 @@
 package com.blps_lab1.demo.dto;
 
 public class OwnerDto {
+    public static Builder builder() {
+        return new Builder();
+    }
+
     private Long id;
     private String name;
     private Boolean requirenmentsMessage;
@@ -46,5 +50,36 @@ public class OwnerDto {
 
     public void setRequirenmentsPhoto(Boolean requirenmentsPhoto) {
         this.requirenmentsPhoto = requirenmentsPhoto;
+    }
+
+    public static class Builder {
+        private Long id;
+        private String name;
+        private Boolean requirenmentsMessage;
+        private Boolean requirenmentsPhoto;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder requirenmentsMessage(Boolean requirenmentsMessage) {
+            this.requirenmentsMessage = requirenmentsMessage;
+            return this;
+        }
+
+        public Builder requirenmentsPhoto(Boolean requirenmentsPhoto) {
+            this.requirenmentsPhoto = requirenmentsPhoto;
+            return this;
+        }
+
+        public OwnerDto build() {
+            return new OwnerDto(id, name, requirenmentsMessage, requirenmentsPhoto);
+        }
     }
 }

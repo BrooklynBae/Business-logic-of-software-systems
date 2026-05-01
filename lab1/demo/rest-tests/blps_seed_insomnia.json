@@ -1,0 +1,396 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-10T14:20:00.000Z",
+  "resources": [
+    {
+      "_id": "wrk_blps_lab1",
+      "_type": "workspace",
+      "name": "BLPS Lab1 REST Tests + Seed",
+      "description": "Набор запросов под архитектуру (Place/Payment/ServiceOption).",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_blps_base",
+      "_type": "environment",
+      "parentId": "wrk_blps_lab1",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8082",
+        "town": "Moscow",
+        "place_id": 1,
+        "owner_id": 1,
+        "user_id": 1,
+        "service_option_id": 1,
+        "reservation_id": 1,
+        "arrival": "2026-05-20",
+        "departure": "2026-05-22",
+        "guests_amount": 2,
+        "pets_amount": 1,
+        "agreed_to_reservation": true,
+        "paymentType": "NOW",
+        "paymentMethod": "CARD",
+        "photo_url": "https://example.com/photo.jpg",
+
+        "owner_name": "Ivan Petrov",
+        "owner_requirements_message": true,
+        "owner_requirements_photo": false,
+
+        "user_name": "Artem Student",
+
+        "place_name": "Nice Flat",
+        "place_description": "Center apartment",
+        "place_type": "FLAT",
+        "price_per_night": 4500,
+        "max_guests": 3,
+        "place_rating": 4.8,
+        "pets_allowed": true,
+
+        "service_option_name": "Pet stay",
+        "service_option_description": "Extra cleaning for pets",
+        "service_option_price_per_day": 500,
+        "service_option_pet_related": true
+      }
+    },
+
+    {
+      "_id": "fld_seed",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "0. Заполнение БД",
+      "description": "Сначала owner/user/service option/place, затем reservation entity"
+    },
+    {
+      "_id": "fld_services",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "1. Доп. услуги",
+      "description": "CRUD-lite для service options"
+    },
+    {
+      "_id": "fld_search",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "2. Поиск и просмотр жилья",
+      "description": "Шаги BPMN: выбор города или популярного жилья, просмотр информации по объекту"
+    },
+    {
+      "_id": "fld_reservation",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "3. Бронирование и оплата",
+      "description": "Шаги BPMN: draft -> update dates -> payment data -> payment process"
+    },
+    {
+      "_id": "fld_user",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "4. Пользователь",
+      "description": "Запросы к публичному интерфейсу пользователя"
+    },
+
+    {
+      "_id": "req_create_owner",
+      "_type": "request",
+      "parentId": "fld_seed",
+      "name": "POST create owner",
+      "method": "POST",
+      "url": "{{ _.base_url }}/owners",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.owner_name }}\",\n  \"requirenmentsMessage\": {{ _.owner_requirements_message }},\n  \"requirenmentsPhoto\": {{ _.owner_requirements_photo }}\n}"
+      }
+    },
+    {
+      "_id": "req_create_user",
+      "_type": "request",
+      "parentId": "fld_seed",
+      "name": "POST create user",
+      "method": "POST",
+      "url": "{{ _.base_url }}/user",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.user_name }}\",\n  \"photo\": \"{{ _.photo_url }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_create_service_option",
+      "_type": "request",
+      "parentId": "fld_seed",
+      "name": "POST create service option",
+      "method": "POST",
+      "url": "{{ _.base_url }}/service-options",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.service_option_name }}\",\n  \"description\": \"{{ _.service_option_description }}\",\n  \"pricePerDay\": {{ _.service_option_price_per_day }},\n  \"petRelated\": {{ _.service_option_pet_related }}\n}"
+      }
+    },
+    {
+      "_id": "req_create_place",
+      "_type": "request",
+      "parentId": "fld_seed",
+      "name": "POST create place",
+      "method": "POST",
+      "url": "{{ _.base_url }}/places",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"town\": \"{{ _.town }}\",\n  \"name\": \"{{ _.place_name }}\",\n  \"description\": \"{{ _.place_description }}\",\n  \"placeType\": \"{{ _.place_type }}\",\n  \"pricePerNight\": {{ _.price_per_night }},\n  \"maxGuests\": {{ _.max_guests }},\n  \"rating\": {{ _.place_rating }},\n  \"petsAllowed\": {{ _.pets_allowed }},\n  \"ownerId\": {{ _.owner_id }}\n}"
+      }
+    },
+    {
+      "_id": "req_create_reservation_entity",
+      "_type": "request",
+      "parentId": "fld_seed",
+      "name": "POST create reservation entity",
+      "method": "POST",
+      "url": "{{ _.base_url }}/reservation/entity",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"placeId\": {{ _.place_id }},\n  \"userId\": {{ _.user_id }},\n  \"arrival\": \"{{ _.arrival }}\",\n  \"departure\": \"{{ _.departure }}\",\n  \"guestsAmount\": {{ _.guests_amount }},\n  \"petsAmount\": {{ _.pets_amount }},\n  \"paymentType\": \"{{ _.paymentType }}\",\n  \"paymentMethod\": \"{{ _.paymentMethod }}\",\n  \"serviceOptionIds\": [{{ _.service_option_id }}]\n}"
+      }
+    },
+    {
+      "_id": "req_get_service_options",
+      "_type": "request",
+      "parentId": "fld_services",
+      "name": "GET service options",
+      "method": "GET",
+      "url": "{{ _.base_url }}/service-options",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_places_by_town",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET places by town",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/town/{{ _.town }}",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_places_by_rating",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET places by rating",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/rating",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_place_by_id",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "GET place by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/places/{{ _.place_id }}",
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_create_reservation",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "POST create reservation draft",
+      "method": "POST",
+      "url": "{{ _.base_url }}/reservation",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"{{ _.arrival }}\",\n  \"departure\": \"{{ _.departure }}\",\n  \"guestsAmount\": {{ _.guests_amount }},\n  \"agreedToReservation\": {{ _.agreed_to_reservation }},\n  \"petsAmount\": {{ _.pets_amount }},\n  \"userId\": {{ _.user_id }},\n  \"idPlace\": {{ _.place_id }},\n  \"serviceOptionIds\": [{{ _.service_option_id }}]\n}"
+      }
+    },
+    {
+      "_id": "req_get_reservation",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "GET reservation by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_patch_dates",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "PATCH reservation dates",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/reservation/{{ _.reservation_id }}/dates",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"{{ _.arrival }}\",\n  \"departure\": \"{{ _.departure }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_patch_payment",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "PATCH payment data for draft",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/payment/reservation/{{ _.reservation_id }}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"{{ _.paymentType }}\",\n  \"paymentMethod\": \"{{ _.paymentMethod }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_process_payment",
+      "_type": "request",
+      "parentId": "fld_reservation",
+      "name": "POST process payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/payment/reservation/{{ _.reservation_id }}/process",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_get_user",
+      "_type": "request",
+      "parentId": "fld_user",
+      "name": "GET user by id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/user/{{ _.user_id }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_patch_user_photo",
+      "_type": "request",
+      "parentId": "fld_user",
+      "name": "PATCH user photo",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/user/{{ _.user_id }}/photo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "text/plain",
+        "text": "{{ _.photo_url }}"
+      }
+    }
+  ]
+}

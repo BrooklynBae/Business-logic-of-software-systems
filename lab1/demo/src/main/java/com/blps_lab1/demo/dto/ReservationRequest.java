@@ -1,6 +1,7 @@
 package com.blps_lab1.demo.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class ReservationRequest {
     private LocalDate arrival;
@@ -8,8 +9,9 @@ public class ReservationRequest {
     private Integer guestsAmount;
     private Boolean agreedToReservation;
     private Integer petsAmount;
-    private Long idOwner;
+    private Long userId;
     private Long idPlace;
+    private List<Long> serviceOptionIds;
 
     public Long getIdPlace() {
         return idPlace;
@@ -19,12 +21,12 @@ public class ReservationRequest {
         this.idPlace = idPlace;
     }
 
-    public Long getIdOwner() {
-        return idOwner;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setIdOwner(Long idOwner) {
-        this.idOwner = idOwner;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Integer getPetsAmount() {
@@ -68,5 +70,13 @@ public class ReservationRequest {
 
     public void setAgreedToReservation(Boolean agreedToReservation) {
         this.agreedToReservation = agreedToReservation;
+    }
+
+    public List<Long> getServiceOptionIds() {
+        return serviceOptionIds;
+    }
+
+    public void setServiceOptionIds(List<Long> serviceOptionIds) {
+        this.serviceOptionIds = serviceOptionIds;
     }
 }

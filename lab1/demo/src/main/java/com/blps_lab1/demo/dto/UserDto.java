@@ -1,8 +1,10 @@
 package com.blps_lab1.demo.dto;
 
-import jakarta.persistence.Column;
-
 public class UserDto {
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public UserDto(long id, String name, String photo) {
         this.id = id;
         this.name = name;
@@ -37,5 +39,30 @@ public class UserDto {
 
     public void setPhoto(String photo) {
         this.photo = photo;
+    }
+
+    public static class Builder {
+        private long id;
+        private String name;
+        private String photo;
+
+        public Builder id(long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder photo(String photo) {
+            this.photo = photo;
+            return this;
+        }
+
+        public UserDto build() {
+            return new UserDto(id, name, photo);
+        }
     }
 }

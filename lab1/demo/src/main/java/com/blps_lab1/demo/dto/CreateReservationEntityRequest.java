@@ -4,6 +4,7 @@ import com.blps_lab1.demo.data.tables.PaymentMethod;
 import com.blps_lab1.demo.data.tables.PaymentType;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class CreateReservationEntityRequest {
     private Long placeId;
@@ -14,6 +15,7 @@ public class CreateReservationEntityRequest {
     private Integer petsAmount;
     private PaymentType paymentType;
     private PaymentMethod paymentMethod;
+    private List<Long> serviceOptionIds;
 
     public CreateReservationEntityRequest() {
     }
@@ -50,6 +52,10 @@ public class CreateReservationEntityRequest {
         return paymentMethod;
     }
 
+    public List<Long> getServiceOptionIds() {
+        return serviceOptionIds;
+    }
+
     public void setPlaceId(Long placeId) {
         this.placeId = placeId;
     }
@@ -80,5 +86,9 @@ public class CreateReservationEntityRequest {
 
     public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public void setServiceOptionIds(List<Long> serviceOptionIds) {
+        this.serviceOptionIds = serviceOptionIds;
     }
 }

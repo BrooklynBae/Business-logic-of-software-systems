@@ -3,9 +3,14 @@ package com.blps_lab1.demo.dto;
 import com.blps_lab1.demo.data.tables.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class ReservationDto {
-    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, Place place, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner) {
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, Place place, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner, List<Long> serviceOptionIds) {
         this.id = id;
         this.arrival = arrival;
         this.departure = departure;
@@ -17,6 +22,7 @@ public class ReservationDto {
         this.paymentType = paymentType;
         this.paymentMethod = paymentMethod;
         this.owner = owner;
+        this.serviceOptionIds = serviceOptionIds;
     }
 
     private Long id;
@@ -30,6 +36,7 @@ public class ReservationDto {
     private PaymentType paymentType;
     private PaymentMethod paymentMethod;
     private Owner owner;
+    private List<Long> serviceOptionIds;
 
 
     public Long getId() {
@@ -118,5 +125,105 @@ public class ReservationDto {
 
     public void setOwner(Owner owner) {
         this.owner = owner;
+    }
+
+    public List<Long> getServiceOptionIds() {
+        return serviceOptionIds;
+    }
+
+    public void setServiceOptionIds(List<Long> serviceOptionIds) {
+        this.serviceOptionIds = serviceOptionIds;
+    }
+
+    public static class Builder {
+        private Long id;
+        private LocalDate arrival;
+        private LocalDate departure;
+        private Integer guestsAmount;
+        private Integer petsAmount;
+        private User user;
+        private Place place;
+        private double price;
+        private PaymentType paymentType;
+        private PaymentMethod paymentMethod;
+        private Owner owner;
+        private List<Long> serviceOptionIds;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder arrival(LocalDate arrival) {
+            this.arrival = arrival;
+            return this;
+        }
+
+        public Builder departure(LocalDate departure) {
+            this.departure = departure;
+            return this;
+        }
+
+        public Builder guestsAmount(Integer guestsAmount) {
+            this.guestsAmount = guestsAmount;
+            return this;
+        }
+
+        public Builder petsAmount(Integer petsAmount) {
+            this.petsAmount = petsAmount;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
+            return this;
+        }
+
+        public Builder place(Place place) {
+            this.place = place;
+            return this;
+        }
+
+        public Builder price(double price) {
+            this.price = price;
+            return this;
+        }
+
+        public Builder paymentType(PaymentType paymentType) {
+            this.paymentType = paymentType;
+            return this;
+        }
+
+        public Builder paymentMethod(PaymentMethod paymentMethod) {
+            this.paymentMethod = paymentMethod;
+            return this;
+        }
+
+        public Builder owner(Owner owner) {
+            this.owner = owner;
+            return this;
+        }
+
+        public Builder serviceOptionIds(List<Long> serviceOptionIds) {
+            this.serviceOptionIds = serviceOptionIds;
+            return this;
+        }
+
+        public ReservationDto build() {
+            return new ReservationDto(
+                    id,
+                    arrival,
+                    departure,
+                    guestsAmount,
+                    petsAmount,
+                    user,
+                    place,
+                    price,
+                    paymentType,
+                    paymentMethod,
+                    owner,
+                    serviceOptionIds
+            );
+        }
     }
 }

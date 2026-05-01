@@ -2,6 +2,7 @@ package com.blps_lab1.demo.data.tables;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Entity
 @Table(name = "Places")
@@ -31,6 +32,10 @@ public class Place {
 
     @Column(name = "max_guests", nullable = false, unique = false)
     private int maxGuests;
+
+    @Column(name = "pets_allowed", nullable = false)
+    @ColumnDefault("true")
+    private Boolean petsAllowed;
 
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
@@ -110,5 +115,13 @@ public class Place {
 
     public void setMaxGuests(int maxGuests) {
         this.maxGuests = maxGuests;
+    }
+
+    public Boolean getPetsAllowed() {
+        return petsAllowed;
+    }
+
+    public void setPetsAllowed(Boolean petsAllowed) {
+        this.petsAllowed = petsAllowed;
     }
 }

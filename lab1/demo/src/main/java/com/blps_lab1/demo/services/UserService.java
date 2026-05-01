@@ -1,13 +1,15 @@
 package com.blps_lab1.demo.services;
 
+import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
 import com.blps_lab1.demo.data.repository.UserRepository;
 import com.blps_lab1.demo.data.tables.User;
+import com.blps_lab1.demo.services.api.IUserService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserService {
+public class UserService implements IUserService {
     private final UserRepository userRepository;
 
 
@@ -15,24 +17,25 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Override
     public UserDto updatePhoto(Long id, String photo) {
-        userRepository.getReferenceById(id).setPhoto(photo);
-        return new UserDto(id, userRepository.getReferenceById(id).getName(), photo);
+        User user = findEntityById(id);
+        user.setPhoto(photo);
+        return toDto(user);
     }
 
+    @Override
     public UserDto findById(Long id) {
-        User user = userRepository.getReferenceById(id);
-
-        return new UserDto(id, user.getName(), user.getPhoto());
+        return toDto(findEntityById(id));
     }
 
+    @Override
     public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id = " + id);
-        }
+        findEntityById(id);
         userRepository.deleteById(id);
     }
 
+    @Override
     public UserDto create(CreateUserRequest request) {
         User user = new User();
         user.setName(request.getName());
@@ -43,6 +46,16 @@ public class UserService {
     }
 
     private UserDto toDto(User user) {
-        return new UserDto(user.getId(), user.getName(), user.getPhoto());
+        return UserDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .photo(user.getPhoto())
+                .build();
+    }
+
+    @Override
+    public User findEntityById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found with id = " + id));
     }
 }

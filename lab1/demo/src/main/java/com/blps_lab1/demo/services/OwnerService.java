@@ -4,10 +4,12 @@ import com.blps_lab1.demo.data.repository.OwnerRepository;
 import com.blps_lab1.demo.data.tables.Owner;
 import com.blps_lab1.demo.dto.CreateOwnerRequest;
 import com.blps_lab1.demo.dto.OwnerDto;
+import com.blps_lab1.demo.exception.NotFoundException;
+import com.blps_lab1.demo.services.api.IOwnerService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class OwnerService {
+public class OwnerService implements IOwnerService {
     private final OwnerRepository ownerRepository;
 
     public OwnerService(OwnerRepository ownerRepository) {
@@ -15,14 +17,15 @@ public class OwnerService {
     }
 
     private OwnerDto toDto(Owner owner) {
-        return new OwnerDto(
-                owner.getId(),
-                owner.getName(),
-                owner.getRequirenmentsMessage(),
-                owner.getRequirenmentsPhoto()
-        );
+        return OwnerDto.builder()
+                .id(owner.getId())
+                .name(owner.getName())
+                .requirenmentsMessage(owner.getRequirenmentsMessage())
+                .requirenmentsPhoto(owner.getRequirenmentsPhoto())
+                .build();
     }
 
+    @Override
     public OwnerDto create(CreateOwnerRequest request) {
         Owner owner = new Owner();
         owner.setName(request.getName());
@@ -37,16 +40,20 @@ public class OwnerService {
         return toDto(saved);
     }
 
+    @Override
     public OwnerDto findById(Long id) {
-        Owner owner = ownerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Owner not found with id = " + id));
-        return toDto(owner);
+        return toDto(findEntityById(id));
     }
 
+    @Override
     public void delete(Long id) {
-        if (!ownerRepository.existsById(id)) {
-            throw new RuntimeException("Owner not found with id = " + id);
-        }
+        findEntityById(id);
         ownerRepository.deleteById(id);
+    }
+
+    @Override
+    public Owner findEntityById(Long id) {
+        return ownerRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Owner not found with id = " + id));
     }
 }

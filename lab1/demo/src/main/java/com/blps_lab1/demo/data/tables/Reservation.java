@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Place_reservations")
@@ -49,6 +51,14 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 25, nullable = false, unique = false)
     private PaymentMethod paymentMethod;
+
+    @ManyToMany
+    @JoinTable(
+            name = "reservation_services",
+            joinColumns = @JoinColumn(name = "reservation_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_option_id")
+    )
+    private List<ServiceOption> serviceOptions = new ArrayList<>();
 
     public PaymentType getPaymentType() {
         return paymentType;
@@ -136,5 +146,13 @@ public class Reservation {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public List<ServiceOption> getServiceOptions() {
+        return serviceOptions;
+    }
+
+    public void setServiceOptions(List<ServiceOption> serviceOptions) {
+        this.serviceOptions = serviceOptions;
     }
 }
