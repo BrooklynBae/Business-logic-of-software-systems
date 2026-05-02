@@ -10,6 +10,7 @@ public class CreatePlaceRequest {
     private double pricePerNight;
     private int maxGuests;
     private double rating;
+    private Boolean petsAllowed;
     private Long ownerId;
 
     public CreatePlaceRequest() {
@@ -47,6 +48,10 @@ public class CreatePlaceRequest {
         return ownerId;
     }
 
+    public Boolean getPetsAllowed() {
+        return petsAllowed;
+    }
+
     public void setTown(String town) {
         this.town = town;
     }
@@ -77,5 +82,9 @@ public class CreatePlaceRequest {
 
     public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public void setPetsAllowed(Boolean petsAllowed) {
+        this.petsAllowed = petsAllowed;
     }
 }

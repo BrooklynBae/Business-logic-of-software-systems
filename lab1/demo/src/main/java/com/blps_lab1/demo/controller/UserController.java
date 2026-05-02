@@ -4,14 +4,14 @@ import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.blps_lab1.demo.services.UserService;
+import com.blps_lab1.demo.services.api.IUserService;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
-    private final UserService userService;
+    private final IUserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(IUserService userService) {
         this.userService = userService;
     }
 

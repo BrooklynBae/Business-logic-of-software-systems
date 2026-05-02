@@ -5,14 +5,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class ReservationDraftStorage {
 
     private final Map<Long, ReservationDto> drafts = new ConcurrentHashMap<>();
+    private final AtomicLong draftSequence = new AtomicLong(1);
 
     public Long saveDraft(ReservationDto request) {
-        Long draftId = request.getUser().getId();
+        Long draftId = draftSequence.getAndIncrement();
         drafts.put(draftId, request);
         return draftId;
     }
