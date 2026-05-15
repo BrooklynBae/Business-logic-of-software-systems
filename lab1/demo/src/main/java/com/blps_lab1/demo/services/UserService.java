@@ -1,5 +1,7 @@
 package com.blps_lab1.demo.services;
 
+import com.blps_lab1.demo.data.tables.Reservation;
+import com.blps_lab1.demo.dto.ReservationDto;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
@@ -58,4 +60,5 @@ public class UserService implements IUserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id = " + id));
     }
+
 }

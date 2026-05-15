@@ -1,22 +1,17 @@
 package com.blps_lab1.demo.services;
 
-import com.blps_lab1.demo.data.tables.Place;
-import com.blps_lab1.demo.data.tables.ServiceOption;
-import com.blps_lab1.demo.data.tables.User;
+import com.blps_lab1.demo.data.repository.ReservationDraftRepository;
+import com.blps_lab1.demo.data.tables.*;
 import com.blps_lab1.demo.dto.CreateReservationEntityRequest;
 import com.blps_lab1.demo.dto.DateDto;
 import com.blps_lab1.demo.dto.DateRequest;
 import com.blps_lab1.demo.dto.ReservationDto;
 import com.blps_lab1.demo.dto.ReservationRequest;
+import com.blps_lab1.demo.services.api.*;
 import com.blps_lab1.demo.services.utils.ReservationDraftStorage;
 import com.blps_lab1.demo.data.repository.ReservationRepository;
-import com.blps_lab1.demo.data.tables.Reservation;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
-import com.blps_lab1.demo.services.api.IPlaceService;
-import com.blps_lab1.demo.services.api.IReservationService;
-import com.blps_lab1.demo.services.api.IServiceOptionService;
-import com.blps_lab1.demo.services.api.IUserService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,14 +22,14 @@ import java.util.List;
 public class ReservationService implements IReservationService {
 
     private final ReservationRepository reservationRepository;
-    private final ReservationDraftStorage draftStorage;
+    private final IReservationDraftService reservationDraftService;
     private final IUserService userService;
     private final IPlaceService placeService;
     private final IServiceOptionService serviceOptionService;
 
-    public ReservationService(ReservationRepository reservationRepository, ReservationDraftStorage draftStorage, IUserService userService, IPlaceService placeService, IServiceOptionService serviceOptionService) {
+    public ReservationService(ReservationRepository reservationRepository, IReservationDraftService reservationDraftService, IUserService userService, IPlaceService placeService, IServiceOptionService serviceOptionService) {
         this.reservationRepository = reservationRepository;
-        this.draftStorage = draftStorage;
+        this.reservationDraftService = reservationDraftService;
         this.userService = userService;
         this.placeService = placeService;
         this.serviceOptionService = serviceOptionService;
@@ -71,70 +66,78 @@ public class ReservationService implements IReservationService {
         return toReservationDto(reservation);
     }
 
-    @Override
-    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
-        ReservationDto request = draftStorage.getDraft(id);
+//    @Override
+//    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
+//        ReservationDto request = draftStorage.getDraft(id);
+//
+//        if (request == null) {
+//            throw new NotFoundException("Draft not found or expired");
+//        }
+//
+//        ensureDatesAvailable(request.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
+//
+//        request.setArrival(dateRequest.getArrival());
+//        request.setDeparture(dateRequest.getDeparture());
+//
+//        double price = countPrice(
+//                request.getArrival(),
+//                request.getDeparture(),
+//                request.getGuestsAmount(),
+//                request.getPetsAmount(),
+//                request.getPlace(),
+//                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
+//        );
+//        request.setPrice(price);
+//
+//        return request;
+//    }
 
-        if (request == null) {
-            throw new NotFoundException("Draft not found or expired");
-        }
-
-        ensureDatesAvailable(request.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
-
-        request.setArrival(dateRequest.getArrival());
-        request.setDeparture(dateRequest.getDeparture());
-
-        double price = countPrice(
-                request.getArrival(),
-                request.getDeparture(),
-                request.getGuestsAmount(),
-                request.getPetsAmount(),
-                request.getPlace(),
-                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
-        );
-        request.setPrice(price);
-
-        return request;
-    }
-
-    @Override
-    public ReservationDto createDraft(ReservationRequest request) {
-        Place place = placeService.findEntityById(request.getIdPlace());
-        User user = userService.findEntityById(request.getUserId());
-        List<ServiceOption> selectedOptions = serviceOptionService.findEntitiesByIds(request.getServiceOptionIds());
-
-        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
-
-        ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
-
-        double price = countPrice(
-                request.getArrival(),
-                request.getDeparture(),
-                request.getGuestsAmount(),
-                request.getPetsAmount(),
-                place,
-                selectedOptions
-        );
-
-        ReservationDto reservationDto = ReservationDto.builder()
-                .arrival(request.getArrival())
-                .departure(request.getDeparture())
-                .guestsAmount(request.getGuestsAmount())
-                .petsAmount(request.getPetsAmount())
-                .user(user)
-                .place(place)
-                .price(price)
-                .paymentType(null)
-                .paymentMethod(null)
-                .owner(place.getOwner())
-                .serviceOptionIds(selectedOptions.stream().map(ServiceOption::getId).toList())
-                .build();
-
-        Long id = draftStorage.saveDraft(reservationDto);
-        reservationDto.setId(id);
-
-        return reservationDto;
-    }
+//    @Override
+//    public ReservationDto createDraft(ReservationRequest request) {
+//        Place place = placeService.findEntityById(request.getIdPlace());
+//        User user = userService.findEntityById(request.getUserId());
+//        List<ServiceOption> selectedOptions = serviceOptionService.findEntitiesByIds(request.getServiceOptionIds());
+//
+//        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
+//
+//        ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
+//
+//        double price = countPrice(
+//                request.getArrival(),
+//                request.getDeparture(),
+//                request.getGuestsAmount(),
+//                request.getPetsAmount(),
+//                place,
+//                selectedOptions
+//        );
+//
+//        ReservationDraft reservationDraft = new ReservationDraft();
+//        reservationDraft.setUser(user);
+//        reservationDraft.setPlace(place);
+//        reservationDraft.setArrival(request.getArrival());
+//        reservationDraft.setDeparture(request.getDeparture());
+//        reservationDraft.setGuestsAmount(request.getGuestsAmount());
+//        reservationDraft.setPetsAmount(request.getPetsAmount());
+//        reservationDraft.setPrice(price);
+//        reservationDraft.setPlaceType(place.getPlaceType());
+//        reservationDraft.setServiceOptions(serviceOptionService.findEntitiesByIds(request.getServiceOptionIds()));
+//
+//        reservationDraftRepository.save(reservationDraft);
+//
+//        return ReservationDto.builder()
+//                .arrival(request.getArrival())
+//                .departure(request.getDeparture())
+//                .guestsAmount(request.getGuestsAmount())
+//                .petsAmount(request.getPetsAmount())
+//                .user(user)
+//                .place(place)
+//                .price(price)
+//                .paymentType(null)
+//                .paymentMethod(null)
+//                .owner(place.getOwner())
+//                .serviceOptionIds(selectedOptions.stream().map(ServiceOption::getId).toList())
+//                .build();
+//    }
 
     @Override
     public void ensureDatesAvailable(Long idPlace, LocalDate arrival, LocalDate departure) {
@@ -156,34 +159,35 @@ public class ReservationService implements IReservationService {
             throw new BadRequestException("Selected dates are already reserved: " + conflictPeriods);
         }
     }
-
-    private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, List<ServiceOption> selectedOptions) {
-        if (guestsAmount > place.getMaxGuests()) {
-            throw new BadRequestException("This place can not accommodate " + guestsAmount + " guests. Limit - " + place.getMaxGuests());
-        }
-        if (petsAmount != null && petsAmount > 0 && Boolean.FALSE.equals(place.getPetsAllowed())) {
-            throw new BadRequestException("This owner does not allow pets in this place");
-        }
-        boolean hasPetRelatedServices = selectedOptions.stream().anyMatch(option -> Boolean.TRUE.equals(option.getPetRelated()));
-        if (hasPetRelatedServices && (petsAmount == null || petsAmount <= 0)) {
-            throw new BadRequestException("Pet-related services require at least one pet in reservation");
-        }
-    }
-
-    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Place place, List<ServiceOption> selectedOptions) {
-        long totalDays = ChronoUnit.DAYS.between(arrival, departure);
-        if (totalDays <= 0) {
-            throw new BadRequestException("Departure date must be after arrival date");
-        }
-        double guestCoeff = 1 + (guestsAmount - 1) * 0.5;
-        double petsCoeff = 1 + (Math.max(0, petsAmount) * 0.1);
-        double servicesPerDay = selectedOptions.stream().mapToDouble(ServiceOption::getPricePerDay).sum();
-        return (place.getPricePerNight() + servicesPerDay) * totalDays * guestCoeff * petsCoeff;
-    }
+//
+//    private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, List<ServiceOption> selectedOptions) {
+//        if (guestsAmount > place.getMaxGuests()) {
+//            throw new BadRequestException("This place can not accommodate " + guestsAmount + " guests. Limit - " + place.getMaxGuests());
+//        }
+//        if (petsAmount != null && petsAmount > 0 && Boolean.FALSE.equals(place.getPetsAllowed())) {
+//            throw new BadRequestException("This owner does not allow pets in this place");
+//        }
+//        boolean hasPetRelatedServices = selectedOptions.stream().anyMatch(option -> Boolean.TRUE.equals(option.getPetRelated()));
+//        if (hasPetRelatedServices && (petsAmount == null || petsAmount <= 0)) {
+//            throw new BadRequestException("Pet-related services require at least one pet in reservation");
+//        }
+//    }
+//
+//    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Place place, List<ServiceOption> selectedOptions) {
+//        long totalDays = ChronoUnit.DAYS.between(arrival, departure);
+//        if (totalDays <= 0) {
+//            throw new BadRequestException("Departure date must be after arrival date");
+//        }
+//        double guestCoeff = 1 + (guestsAmount - 1) * 0.5;
+//        double petsCoeff = 1 + (Math.max(0, petsAmount) * 0.1);
+//        double servicesPerDay = selectedOptions.stream().mapToDouble(ServiceOption::getPricePerDay).sum();
+//        return (place.getPricePerNight() + servicesPerDay) * totalDays * guestCoeff * petsCoeff;
+//    }
 
     @Override
     public Long confirmReservation(Long id) {
         ReservationDto reservationDto = draftStorage.getDraft(id);
+        ReservationDraft reservationDraft = ReservationDraftRepository.get
 
         if (reservationDto == null) {
             throw new NotFoundException("Draft not found or expired");
