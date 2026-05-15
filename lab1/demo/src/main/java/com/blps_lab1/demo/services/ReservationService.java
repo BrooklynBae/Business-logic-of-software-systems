@@ -66,78 +66,78 @@ public class ReservationService implements IReservationService {
         return toReservationDto(reservation);
     }
 
-//    @Override
-//    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
-//        ReservationDto request = draftStorage.getDraft(id);
-//
-//        if (request == null) {
-//            throw new NotFoundException("Draft not found or expired");
-//        }
-//
-//        ensureDatesAvailable(request.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
-//
-//        request.setArrival(dateRequest.getArrival());
-//        request.setDeparture(dateRequest.getDeparture());
-//
-//        double price = countPrice(
-//                request.getArrival(),
-//                request.getDeparture(),
-//                request.getGuestsAmount(),
-//                request.getPetsAmount(),
-//                request.getPlace(),
-//                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
-//        );
-//        request.setPrice(price);
-//
-//        return request;
-//    }
+    @Override
+    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
+        ReservationDto request = draftStorage.getDraft(id);
 
-//    @Override
-//    public ReservationDto createDraft(ReservationRequest request) {
-//        Place place = placeService.findEntityById(request.getIdPlace());
-//        User user = userService.findEntityById(request.getUserId());
-//        List<ServiceOption> selectedOptions = serviceOptionService.findEntitiesByIds(request.getServiceOptionIds());
-//
-//        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
-//
-//        ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
-//
-//        double price = countPrice(
-//                request.getArrival(),
-//                request.getDeparture(),
-//                request.getGuestsAmount(),
-//                request.getPetsAmount(),
-//                place,
-//                selectedOptions
-//        );
-//
-//        ReservationDraft reservationDraft = new ReservationDraft();
-//        reservationDraft.setUser(user);
-//        reservationDraft.setPlace(place);
-//        reservationDraft.setArrival(request.getArrival());
-//        reservationDraft.setDeparture(request.getDeparture());
-//        reservationDraft.setGuestsAmount(request.getGuestsAmount());
-//        reservationDraft.setPetsAmount(request.getPetsAmount());
-//        reservationDraft.setPrice(price);
-//        reservationDraft.setPlaceType(place.getPlaceType());
-//        reservationDraft.setServiceOptions(serviceOptionService.findEntitiesByIds(request.getServiceOptionIds()));
-//
-//        reservationDraftRepository.save(reservationDraft);
-//
-//        return ReservationDto.builder()
-//                .arrival(request.getArrival())
-//                .departure(request.getDeparture())
-//                .guestsAmount(request.getGuestsAmount())
-//                .petsAmount(request.getPetsAmount())
-//                .user(user)
-//                .place(place)
-//                .price(price)
-//                .paymentType(null)
-//                .paymentMethod(null)
-//                .owner(place.getOwner())
-//                .serviceOptionIds(selectedOptions.stream().map(ServiceOption::getId).toList())
-//                .build();
-//    }
+        if (request == null) {
+            throw new NotFoundException("Draft not found or expired");
+        }
+
+        ensureDatesAvailable(request.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
+
+        request.setArrival(dateRequest.getArrival());
+        request.setDeparture(dateRequest.getDeparture());
+
+        double price = countPrice(
+                request.getArrival(),
+                request.getDeparture(),
+                request.getGuestsAmount(),
+                request.getPetsAmount(),
+                request.getPlace(),
+                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
+        );
+        request.setPrice(price);
+
+        return request;
+    }
+
+    @Override
+    public ReservationDto createDraft(ReservationRequest request) {
+        Place place = placeService.findEntityById(request.getIdPlace());
+        User user = userService.findEntityById(request.getUserId());
+        List<ServiceOption> selectedOptions = serviceOptionService.findEntitiesByIds(request.getServiceOptionIds());
+
+        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
+
+        ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
+
+        double price = countPrice(
+                request.getArrival(),
+                request.getDeparture(),
+                request.getGuestsAmount(),
+                request.getPetsAmount(),
+                place,
+                selectedOptions
+        );
+
+        ReservationDraft reservationDraft = new ReservationDraft();
+        reservationDraft.setUser(user);
+        reservationDraft.setPlace(place);
+        reservationDraft.setArrival(request.getArrival());
+        reservationDraft.setDeparture(request.getDeparture());
+        reservationDraft.setGuestsAmount(request.getGuestsAmount());
+        reservationDraft.setPetsAmount(request.getPetsAmount());
+        reservationDraft.setPrice(price);
+        reservationDraft.setPlaceType(place.getPlaceType());
+        reservationDraft.setServiceOptions(serviceOptionService.findEntitiesByIds(request.getServiceOptionIds()));
+
+        reservationDraftRepository.save(reservationDraft);
+
+        return ReservationDto.builder()
+                .arrival(request.getArrival())
+                .departure(request.getDeparture())
+                .guestsAmount(request.getGuestsAmount())
+                .petsAmount(request.getPetsAmount())
+                .user(user)
+                .place(place)
+                .price(price)
+                .paymentType(null)
+                .paymentMethod(null)
+                .owner(place.getOwner())
+                .serviceOptionIds(selectedOptions.stream().map(ServiceOption::getId).toList())
+                .build();
+    }
 
     @Override
     public void ensureDatesAvailable(Long idPlace, LocalDate arrival, LocalDate departure) {

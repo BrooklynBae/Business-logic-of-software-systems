@@ -8,13 +8,18 @@ import com.blps_lab1.demo.dto.ReservationRequest;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.*;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
+@EnableScheduling
 public class ReservationDraftService implements IReservationDraftService {
     private final ReservationDraftRepository reservationDraftRepository;
     private final IReservationService reservationService;
@@ -77,7 +82,6 @@ public class ReservationDraftService implements IReservationDraftService {
                 .build();
     }
 
-    //add time info, status
     @Override
     public ReservationDto updateDate(Long id, DateRequest dateRequest) {
         ReservationDraft reservationDraft = reservationDraftRepository.getReferenceById(id);
@@ -103,6 +107,16 @@ public class ReservationDraftService implements IReservationDraftService {
 
         return reservationDraft;
     }
+
+    @Override
+    @Scheduled(cron = "0 */10 * * * *")
+    @Transactional
+    public void deleteExpiredDrafts() {
+        int minutesToLive = 30;
+        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(minutesToLive);
+        reservationDraftRepository.deleteByCreatedAtBefore(expiryTime);
+    }
+
 
     private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, List<ServiceOption> selectedOptions) {
         if (guestsAmount > place.getMaxGuests()) {

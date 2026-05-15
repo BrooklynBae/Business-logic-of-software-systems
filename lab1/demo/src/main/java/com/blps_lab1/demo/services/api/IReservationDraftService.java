@@ -9,4 +9,6 @@ public interface IReservationDraftService {
 
     public ReservationDto updateDate(Long id, DateRequest dateRequest);
 
+    public void deleteExpiredDrafts();
+
 }
