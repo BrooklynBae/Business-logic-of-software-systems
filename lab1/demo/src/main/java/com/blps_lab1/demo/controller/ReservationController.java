@@ -1,6 +1,7 @@
 package com.blps_lab1.demo.controller;
 
 import com.blps_lab1.demo.dto.*;
+import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,15 +10,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/reservation")
 public class ReservationController {
     private final IReservationService reservationService;
+    private final IReservationDraftService reservationDraftService;
 
-    public ReservationController(IReservationService reservationService) {
+    public ReservationController(IReservationService reservationService, IReservationDraftService reservationDraftService) {
         this.reservationService = reservationService;
+        this.reservationDraftService = reservationDraftService;
     }
     //сначала create draft -> payment = null, потом confirm payment ->
     //я возвращаю айди созданного черновика and price
     @PostMapping
     public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
-        ReservationDto response = reservationService.createDraft(request);
+        ReservationDto response = reservationDraftService.createDraft(request);
         return ResponseEntity.ok(response);
     }
 
@@ -26,7 +29,7 @@ public class ReservationController {
             @PathVariable Long id,
             @RequestBody DateRequest request
     ) {
-        ReservationDto response = reservationService.updateDate(id, request);
+        ReservationDto response = reservationDraftService.updateDate(id, request);
         return ResponseEntity.ok(response);
     }
 
@@ -48,4 +51,4 @@ public class ReservationController {
         return ResponseEntity.noContent().build();
     }
 }
-    порядок действий: мы создаем черновик, когда мы его создаем, то должны получать текущие занятые даты из бд. потом берем этот черновик и задаем способ оплаты, также проверяя занятые даты. дальше делаем бронь, берем черновик и способ оплаты, снова проверяем занятые даты, если успешно - кладем в бд.
+    //порядок действий: мы создаем черновик, когда мы его создаем, то должны получать текущие занятые даты из бд. потом берем этот черновик и задаем способ оплаты, также проверяя занятые даты. дальше делаем бронь, берем черновик и способ оплаты, снова проверяем занятые даты, если успешно - кладем в бд.

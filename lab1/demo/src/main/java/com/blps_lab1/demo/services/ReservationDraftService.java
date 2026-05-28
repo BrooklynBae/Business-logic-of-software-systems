@@ -16,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @EnableScheduling
@@ -35,11 +38,32 @@ public class ReservationDraftService implements IReservationDraftService {
         this.serviceOptionService = serviceOptionService;
     }
 
+    private ReservationDto toReservationDto(ReservationDraft reservation) {
+        return ReservationDto.builder()
+                .id(reservation.getId())
+                .arrival(reservation.getArrival())
+                .departure(reservation.getDeparture())
+                .guestsAmount(reservation.getGuestsAmount())
+                .petsAmount(reservation.getPetsAmount())
+                .user(reservation.getUser())
+                .place(reservation.getPlace())
+                .price(reservation.getPrice())
+                //.paymentType(reservation.getPaymentType())
+                //.paymentMethod(reservation.getPaymentMethod())
+                .owner(reservation.getPlace().getOwner())
+                .serviceOptionIds(reservation.getServiceOptions() != null ?
+                        reservation.getServiceOptions().stream().map(ServiceOption::getId).toList() :
+                        new ArrayList<>())
+                .build();
+    }
+
     @Override
     public ReservationDto createDraft(ReservationRequest request) {
         Place place = placeService.findEntityById(request.getIdPlace());
         User user = userService.findEntityById(request.getUserId());
-        List<ServiceOption> selectedOptions = serviceOptionService.findEntitiesByIds(request.getServiceOptionIds());
+        Set<ServiceOption> selectedOptions = new HashSet<>(
+                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
+        );
 
         validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
 
@@ -63,7 +87,7 @@ public class ReservationDraftService implements IReservationDraftService {
         reservationDraft.setPetsAmount(request.getPetsAmount());
         reservationDraft.setPrice(price);
         reservationDraft.setPlaceType(place.getPlaceType());
-        reservationDraft.setServiceOptions(serviceOptionService.findEntitiesByIds(request.getServiceOptionIds()));
+        reservationDraft.setServiceOptions(selectedOptions);
 
         reservationDraftRepository.save(reservationDraft);
 
@@ -84,16 +108,15 @@ public class ReservationDraftService implements IReservationDraftService {
 
     @Override
     public ReservationDto updateDate(Long id, DateRequest dateRequest) {
-        ReservationDraft reservationDraft = reservationDraftRepository.getReferenceById(id);
-
-        if (reservationDraft == null) {
-            throw new NotFoundException("Draft not found or expired");
-        }
+        ReservationDraft reservationDraft = reservationDraftRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Draft not found or expired"));
 
         reservationService.ensureDatesAvailable(reservationDraft.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
 
         reservationDraft.setArrival(dateRequest.getArrival());
         reservationDraft.setDeparture(dateRequest.getDeparture());
+
+        Set<ServiceOption> selectedOptions = new HashSet<>(reservationDraft.getServiceOptions());
 
         double price = countPrice(
                 reservationDraft.getArrival(),
@@ -101,11 +124,13 @@ public class ReservationDraftService implements IReservationDraftService {
                 reservationDraft.getGuestsAmount(),
                 reservationDraft.getPetsAmount(),
                 reservationDraft.getPlace(),
-                serviceOptionService.findEntitiesByIds(reservationDraft.getServiceOptionIds())
+                selectedOptions
         );
         reservationDraft.setPrice(price);
 
-        return reservationDraft;
+        reservationDraftRepository.save(reservationDraft);
+
+        return toReservationDto(reservationDraft);
     }
 
     @Override
@@ -118,27 +143,35 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
 
-    private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, List<ServiceOption> selectedOptions) {
+    private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, Set<ServiceOption> selectedOptions) {
         if (guestsAmount > place.getMaxGuests()) {
             throw new BadRequestException("This place can not accommodate " + guestsAmount + " guests. Limit - " + place.getMaxGuests());
         }
-        if (petsAmount != null && petsAmount > 0 && Boolean.FALSE.equals(place.getPetsAllowed())) {
-            throw new BadRequestException("This owner does not allow pets in this place");
-        }
-        boolean hasPetRelatedServices = selectedOptions.stream().anyMatch(option -> Boolean.TRUE.equals(option.getPetRelated()));
-        if (hasPetRelatedServices && (petsAmount == null || petsAmount <= 0)) {
-            throw new BadRequestException("Pet-related services require at least one pet in reservation");
+        int actualPetsAmount = (petsAmount != null) ? petsAmount : 0;
+
+        if (actualPetsAmount > 0) {
+            if (Boolean.FALSE.equals(place.getPetsAllowed())) {
+                throw new BadRequestException("This place does not allow pets.");
+            }
+
+            if (actualPetsAmount > place.getMaxPets()) {
+                throw new BadRequestException("This place cannot accommodate " + actualPetsAmount + " pets. Limit is " + place.getMaxPets());
+            }
         }
     }
 
-    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Place place, List<ServiceOption> selectedOptions) {
+    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Place place, Set<ServiceOption> selectedOptions) {
         long totalDays = ChronoUnit.DAYS.between(arrival, departure);
         if (totalDays <= 0) {
             throw new BadRequestException("Departure date must be after arrival date");
         }
         double guestCoeff = 1 + (guestsAmount - 1) * 0.5;
         double petsCoeff = 1 + (Math.max(0, petsAmount) * 0.1);
-        double servicesPerDay = selectedOptions.stream().mapToDouble(ServiceOption::getPricePerDay).sum();
-        return (place.getPricePerNight() + servicesPerDay) * totalDays * guestCoeff * petsCoeff;
-    }
+        double accommodationTotalPrice = place.getPricePerNight() * totalDays * guestCoeff * petsCoeff;
+
+        double servicesTotalPrice = selectedOptions.stream()
+                .mapToDouble(ServiceOption::getPricePerDay)
+                .sum() * totalDays;
+
+        return accommodationTotalPrice + servicesTotalPrice;    }
 }

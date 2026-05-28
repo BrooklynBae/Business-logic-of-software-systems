@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "Places")
 public class Place {
@@ -37,6 +40,10 @@ public class Place {
     @ColumnDefault("true")
     private Boolean petsAllowed;
 
+    @Column(name = "max_pets", nullable = false)
+    @ColumnDefault("0")
+    private int maxPets;
+
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
     private double rating;
@@ -44,6 +51,31 @@ public class Place {
     @ManyToOne
     @JoinColumn(name = "id_owner", nullable = false)
     private Owner owner;
+
+    @ManyToMany
+    @JoinTable(
+            name = "place_services",
+            joinColumns = @JoinColumn(name = "place_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_option_id")
+    )
+    private Set<ServiceOption> serviceOptions = new HashSet<>();
+
+    public Set<ServiceOption> getServiceOptions() {
+        return serviceOptions;
+    }
+
+    public void setServiceOptions(Set<ServiceOption> serviceOptions) {
+        this.serviceOptions = serviceOptions != null ? serviceOptions : new HashSet<>();
+    }
+
+    public int getMaxPets() {
+        return maxPets;
+    }
+
+    public void setMaxPets(int maxPets) {
+        this.maxPets = maxPets;
+    }
+
 
     public long getId() {
         return id;

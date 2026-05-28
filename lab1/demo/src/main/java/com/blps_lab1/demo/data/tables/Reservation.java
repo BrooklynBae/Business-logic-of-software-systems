@@ -6,7 +6,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Place_reservations")
@@ -58,7 +60,7 @@ public class Reservation {
             joinColumns = @JoinColumn(name = "reservation_id"),
             inverseJoinColumns = @JoinColumn(name = "service_option_id")
     )
-    private List<ServiceOption> serviceOptions = new ArrayList<>();
+    private Set<ServiceOption> serviceOptions = new HashSet<>();
 
     public PaymentType getPaymentType() {
         return paymentType;
@@ -148,11 +150,11 @@ public class Reservation {
         this.price = price;
     }
 
-    public List<ServiceOption> getServiceOptions() {
+    public Set<ServiceOption> getServiceOptions() {
         return serviceOptions;
     }
 
-    public void setServiceOptions(List<ServiceOption> serviceOptions) {
-        this.serviceOptions = serviceOptions;
+    public void setServiceOptions(Set<ServiceOption> serviceOptions) {
+        this.serviceOptions = serviceOptions != null ? serviceOptions : new HashSet<>();
     }
 }
