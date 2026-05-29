@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Service
 @EnableScheduling
+@Transactional(readOnly = true)
 public class ReservationDraftService implements IReservationDraftService {
     private final ReservationDraftRepository reservationDraftRepository;
     private final IReservationService reservationService;
@@ -48,8 +48,6 @@ public class ReservationDraftService implements IReservationDraftService {
                 .user(reservation.getUser())
                 .place(reservation.getPlace())
                 .price(reservation.getPrice())
-                //.paymentType(reservation.getPaymentType())
-                //.paymentMethod(reservation.getPaymentMethod())
                 .owner(reservation.getPlace().getOwner())
                 .serviceOptionIds(reservation.getServiceOptions() != null ?
                         reservation.getServiceOptions().stream().map(ServiceOption::getId).toList() :
@@ -58,6 +56,7 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ReservationDto createDraft(ReservationRequest request) {
         Place place = placeService.findEntityById(request.getIdPlace());
         User user = userService.findEntityById(request.getUserId());
@@ -107,6 +106,7 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ReservationDto updateDate(Long id, DateRequest dateRequest) {
         ReservationDraft reservationDraft = reservationDraftRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Draft not found or expired"));
@@ -149,7 +149,7 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void removeDraft(Long id) {
         if (!reservationDraftRepository.existsById(id)) {
             throw new NotFoundException("Draft not found with id = " + id);

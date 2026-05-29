@@ -7,7 +7,7 @@ import com.blps_lab1.demo.dto.ServiceOptionDto;
 import java.util.List;
 
 public interface IServiceOptionService {
-    ServiceOptionDto create(CreateServiceOptionRequest request);
+    //ServiceOptionDto create(CreateServiceOptionRequest request);
     List<ServiceOptionDto> findAll();
     List<ServiceOption> findEntitiesByIds(List<Long> ids);
 }

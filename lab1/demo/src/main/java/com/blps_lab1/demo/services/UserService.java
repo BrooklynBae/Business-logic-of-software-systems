@@ -1,7 +1,5 @@
 package com.blps_lab1.demo.services;
 
-import com.blps_lab1.demo.data.tables.Reservation;
-import com.blps_lab1.demo.dto.ReservationDto;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
@@ -9,8 +7,10 @@ import com.blps_lab1.demo.data.repository.UserRepository;
 import com.blps_lab1.demo.data.tables.User;
 import com.blps_lab1.demo.services.api.IUserService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class UserService implements IUserService {
     private final UserRepository userRepository;
 
@@ -20,6 +20,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public UserDto updatePhoto(Long id, String photo) {
         User user = findEntityById(id);
         user.setPhoto(photo);
@@ -32,12 +33,14 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         findEntityById(id);
         userRepository.deleteById(id);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public UserDto create(CreateUserRequest request) {
         User user = new User();
         user.setName(request.getName());

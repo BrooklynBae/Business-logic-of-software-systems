@@ -7,8 +7,10 @@ import com.blps_lab1.demo.dto.OwnerDto;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.IOwnerService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class OwnerService implements IOwnerService {
     private final OwnerRepository ownerRepository;
 
@@ -26,6 +28,7 @@ public class OwnerService implements IOwnerService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public OwnerDto create(CreateOwnerRequest request) {
         Owner owner = new Owner();
         owner.setName(request.getName());
@@ -46,6 +49,7 @@ public class OwnerService implements IOwnerService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         findEntityById(id);
         ownerRepository.deleteById(id);

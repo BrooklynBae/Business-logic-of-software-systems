@@ -1,6 +1,5 @@
 package com.blps_lab1.demo.services;
 
-import com.blps_lab1.demo.data.repository.ReservationDraftRepository;
 import com.blps_lab1.demo.data.tables.*;
 import com.blps_lab1.demo.dto.*;
 import com.blps_lab1.demo.services.api.*;
@@ -9,6 +8,7 @@ import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
+@Transactional(readOnly = true)
 public class ReservationService implements IReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -68,11 +69,9 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void ensureDatesAvailable(Long idPlace, LocalDate arrival, LocalDate departure) {
-        List<Reservation> conflicts = reservationRepository.findByPlaceIdAndArrivalLessThanAndDepartureGreaterThan(
-                idPlace,
-                departure,
-                arrival);
+        List<Reservation> conflicts = reservationRepository.findConflictsForUpdate(idPlace, arrival, departure);
 
         if (arrival.isAfter(departure)) {
             throw new RuntimeException("Arrival date later than departure");
@@ -124,6 +123,7 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long confirmReservation(Long id, PaymentRequest request) {
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
 
@@ -140,8 +140,8 @@ public class ReservationService implements IReservationService {
         reservation.setPetsAmount(reservationDraft.getPetsAmount());
         reservation.setPrice(reservationDraft.getPrice());
         reservation.setPlaceType(reservationDraft.getPlace().getPlaceType());
-        reservation.setPaymentType(request.getPaymentType()); //если можно обернуть это и оплату в одну транзакцию, то убрать
-        reservation.setPaymentMethod(request.getPaymentMethod()); //если нельзя, то оставить и добавить эти поля в ентити
+        reservation.setPaymentType(request.getPaymentType());
+        reservation.setPaymentMethod(request.getPaymentMethod());
         reservation.setServiceOptions(reservationDraft.getServiceOptions());
         reservationRepository.save(reservation);
 
@@ -155,6 +155,7 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ReservationDto createReservationEntity(CreateReservationEntityRequest request) {
         Place place = placeService.findEntityById(request.getPlaceId());
         User user = userService.findEntityById(request.getUserId());

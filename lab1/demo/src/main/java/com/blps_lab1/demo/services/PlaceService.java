@@ -12,10 +12,12 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class PlaceService implements IPlaceService {
 
     private final PlaceRepository placeRepository;
@@ -63,6 +65,7 @@ public class PlaceService implements IPlaceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public PlaceDto create(CreatePlaceRequest request) {
         Place place = new Place();
         place.setTown(request.getTown());
@@ -80,6 +83,7 @@ public class PlaceService implements IPlaceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         findEntityById(id);
         placeRepository.deleteById(id);

@@ -13,6 +13,7 @@ import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Random;
 
@@ -29,6 +30,7 @@ public class PaymentService implements IPaymentService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public PaymentResponseDto processPayment(Long id, PaymentRequest request) {
 
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);

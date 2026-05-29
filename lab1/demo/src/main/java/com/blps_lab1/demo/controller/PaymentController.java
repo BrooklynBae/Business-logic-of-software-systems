@@ -22,7 +22,7 @@ public class PaymentController {
 //    }
 
     @PostMapping("/reservation/{id}/process")
-    public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable Long id) {
-        return ResponseEntity.ok(paymentService.processPayment(id));
+    public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable Long id, @RequestBody PaymentRequest request) {
+        return ResponseEntity.ok(paymentService.processPayment(id, request));
     }
 }
