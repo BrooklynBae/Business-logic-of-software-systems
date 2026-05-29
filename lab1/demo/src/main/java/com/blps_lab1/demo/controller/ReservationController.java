@@ -26,7 +26,7 @@ public class ReservationController {
 
     @PatchMapping("/{id}/dates")
     public ResponseEntity<ReservationDto> updateDate(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody DateRequest request
     ) {
         ReservationDto response = reservationDraftService.updateDate(id, request);
@@ -34,7 +34,7 @@ public class ReservationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReservationDto> getById(@PathVariable Long id) {
+    public ResponseEntity<ReservationDto> getById(@PathVariable("id") Long id) {
         ReservationDto response = reservationService.findReservation(id);
         return ResponseEntity.ok(response);
     }
@@ -46,7 +46,7 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         reservationService.deleteReservation(id);
         return ResponseEntity.noContent().build();
     }

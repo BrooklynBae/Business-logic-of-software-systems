@@ -28,9 +28,13 @@ dependencies {
 
 	implementation 'io.minio:minio:8.6.0'
 
-	implementation 'me.snowdrop:narayana-spring-boot-starter:3.0.0'
+	implementation 'org.jboss.narayana.jta:narayana-jta:6.0.0.Final'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs.add("-parameters")
 }

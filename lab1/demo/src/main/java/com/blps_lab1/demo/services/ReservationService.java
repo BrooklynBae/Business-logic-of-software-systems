@@ -74,7 +74,7 @@ public class ReservationService implements IReservationService {
         List<Reservation> conflicts = reservationRepository.findConflictsForUpdate(idPlace, arrival, departure);
 
         if (arrival.isAfter(departure)) {
-            throw new RuntimeException("Arrival date later than departure");
+            throw new BadRequestException("Arrival date later than departure");
         }
 
         if (!conflicts.isEmpty()) {
@@ -97,10 +97,6 @@ public class ReservationService implements IReservationService {
         if (actualPetsAmount > 0) {
             if (Boolean.FALSE.equals(place.getPetsAllowed())) {
                 throw new BadRequestException("This place does not allow pets.");
-            }
-
-            if (actualPetsAmount > place.getMaxPets()) {
-                throw new BadRequestException("This place cannot accommodate " + actualPetsAmount + " pets. Limit is " + place.getMaxPets());
             }
         }
     }
@@ -142,7 +138,11 @@ public class ReservationService implements IReservationService {
         reservation.setPlaceType(reservationDraft.getPlace().getPlaceType());
         reservation.setPaymentType(request.getPaymentType());
         reservation.setPaymentMethod(request.getPaymentMethod());
-        reservation.setServiceOptions(reservationDraft.getServiceOptions());
+
+        if (reservationDraft.getServiceOptions() != null) {
+            reservation.setServiceOptions(new HashSet<>(reservationDraft.getServiceOptions()));
+        }
+
         reservationRepository.save(reservation);
 
         return reservation.getId();

@@ -21,19 +21,19 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getById(@PathVariable Long id) {
+    public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
         UserDto response = userService.findById(id);
         return ResponseEntity.ok(response);
     } //find user or users res?
 
     @PatchMapping("/{id}/photo")
     public ResponseEntity<UserDto> updatePhoto(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody String photo
     ) {
         UserDto response = userService.updatePhoto(id, photo);

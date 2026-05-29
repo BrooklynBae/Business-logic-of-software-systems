@@ -25,13 +25,13 @@ public class OwnerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OwnerDto> getById(@PathVariable Long id) {
+    public ResponseEntity<OwnerDto> getById(@PathVariable("id") Long id) {
         OwnerDto response = ownerService.findById(id);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         ownerService.delete(id);
         return ResponseEntity.noContent().build();
     }

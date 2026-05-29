@@ -28,7 +28,7 @@ public class PlaceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PlaceDto> getById(@PathVariable Long id) {
+    public ResponseEntity<PlaceDto> getById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(placeService.findPlace(id));
     }
 
@@ -38,7 +38,7 @@ public class PlaceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         placeService.delete(id);
         return ResponseEntity.noContent().build();
     }

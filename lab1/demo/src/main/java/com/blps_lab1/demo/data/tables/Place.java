@@ -40,10 +40,6 @@ public class Place {
     @ColumnDefault("true")
     private Boolean petsAllowed;
 
-    @Column(name = "max_pets", nullable = false)
-    @ColumnDefault("0")
-    private int maxPets;
-
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
     private double rating;
@@ -67,15 +63,6 @@ public class Place {
     public void setServiceOptions(Set<ServiceOption> serviceOptions) {
         this.serviceOptions = serviceOptions != null ? serviceOptions : new HashSet<>();
     }
-
-    public int getMaxPets() {
-        return maxPets;
-    }
-
-    public void setMaxPets(int maxPets) {
-        this.maxPets = maxPets;
-    }
-
 
     public long getId() {
         return id;

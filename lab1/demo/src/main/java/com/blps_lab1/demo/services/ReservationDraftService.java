@@ -90,19 +90,7 @@ public class ReservationDraftService implements IReservationDraftService {
 
         reservationDraftRepository.save(reservationDraft);
 
-        return ReservationDto.builder()
-                .arrival(request.getArrival())
-                .departure(request.getDeparture())
-                .guestsAmount(request.getGuestsAmount())
-                .petsAmount(request.getPetsAmount())
-                .user(user)
-                .place(place)
-                .price(price)
-                .paymentType(null)
-                .paymentMethod(null)
-                .owner(place.getOwner())
-                .serviceOptionIds(selectedOptions.stream().map(ServiceOption::getId).toList())
-                .build();
+        return toReservationDto(reservationDraft);
     }
 
     @Override
@@ -166,10 +154,6 @@ public class ReservationDraftService implements IReservationDraftService {
         if (actualPetsAmount > 0) {
             if (Boolean.FALSE.equals(place.getPetsAllowed())) {
                 throw new BadRequestException("This place does not allow pets.");
-            }
-
-            if (actualPetsAmount > place.getMaxPets()) {
-                throw new BadRequestException("This place cannot accommodate " + actualPetsAmount + " pets. Limit is " + place.getMaxPets());
             }
         }
     }

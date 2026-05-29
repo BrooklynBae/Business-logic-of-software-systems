@@ -3,6 +3,10 @@ package com.blps_lab1.demo.dto;
 import java.time.LocalDate;
 
 public class DateRequest {
+
+    public DateRequest() {
+    }
+
     public DateRequest(LocalDate arrival, LocalDate departure) {
         this.arrival = arrival;
         this.departure = departure;
