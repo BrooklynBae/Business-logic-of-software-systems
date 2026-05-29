@@ -19,15 +19,15 @@ public class ServiceOptionService implements IServiceOptionService {
         this.serviceOptionRepository = serviceOptionRepository;
     }
 
-    @Override
-    public ServiceOptionDto create(CreateServiceOptionRequest request) {
-        ServiceOption serviceOption = new ServiceOption();
-        serviceOption.setName(request.getName());
-        serviceOption.setDescription(request.getDescription());
-        serviceOption.setPricePerDay(request.getPricePerDay());
-        serviceOption.setPetRelated(request.getPetRelated() != null && request.getPetRelated());
-        return toDto(serviceOptionRepository.save(serviceOption));
-    }
+//    @Override
+//    public ServiceOptionDto create(CreateServiceOptionRequest request) {
+//        ServiceOption serviceOption = new ServiceOption();
+//        serviceOption.setName(request.getName());
+//        serviceOption.setDescription(request.getDescription());
+//        serviceOption.setPricePerDay(request.getPricePerDay());
+//        serviceOption.setPetRelated(request.getPetRelated() != null && request.getPetRelated());
+//        return toDto(serviceOptionRepository.save(serviceOption));
+//    }
 
     @Override
     public List<ServiceOptionDto> findAll() {
@@ -54,7 +54,6 @@ public class ServiceOptionService implements IServiceOptionService {
                 .name(serviceOption.getName())
                 .description(serviceOption.getDescription())
                 .pricePerDay(serviceOption.getPricePerDay())
-                .petRelated(serviceOption.getPetRelated())
                 .build();
     }
 }

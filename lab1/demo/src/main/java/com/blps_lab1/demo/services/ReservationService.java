@@ -140,8 +140,8 @@ public class ReservationService implements IReservationService {
         reservation.setPetsAmount(reservationDraft.getPetsAmount());
         reservation.setPrice(reservationDraft.getPrice());
         reservation.setPlaceType(reservationDraft.getPlace().getPlaceType());
-        //reservation.setPaymentType(reservationDraft.getPaymentType()); //если можно обернуть это и оплату в одну транзакцию, то убрать
-        //reservation.setPaymentMethod(reservationDraft.getPaymentMethod()); //если нельзя, то оставить и добавить эти поля в ентити
+        reservation.setPaymentType(request.getPaymentType()); //если можно обернуть это и оплату в одну транзакцию, то убрать
+        reservation.setPaymentMethod(request.getPaymentMethod()); //если нельзя, то оставить и добавить эти поля в ентити
         reservation.setServiceOptions(reservationDraft.getServiceOptions());
         reservationRepository.save(reservation);
 
