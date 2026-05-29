@@ -2,9 +2,11 @@ package com.blps_lab1.demo.controller;
 
 import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.blps_lab1.demo.services.api.IUserService;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/user")
@@ -29,14 +31,23 @@ public class UserController {
     public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
         UserDto response = userService.findById(id);
         return ResponseEntity.ok(response);
-    } //find user or users res?
+    }
 
-    @PatchMapping("/{id}/photo")
-    public ResponseEntity<UserDto> updatePhoto(
+    @PutMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDto> uploadUserPhoto(
             @PathVariable("id") Long id,
-            @RequestBody String photo
-    ) {
-        UserDto response = userService.updatePhoto(id, photo);
-        return ResponseEntity.ok(response);
+            @RequestParam("file") MultipartFile file) {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        UserDto updatedUser = userService.updatePhoto(id, file);
+        return ResponseEntity.ok(updatedUser);
     }
 }

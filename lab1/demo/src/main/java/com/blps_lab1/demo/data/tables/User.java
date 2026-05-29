@@ -2,6 +2,9 @@ package com.blps_lab1.demo.data.tables;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "Users")
 public class User {
@@ -15,6 +18,9 @@ public class User {
 
     @Column(name = "photo", nullable = true, unique = false)
     private String photo;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
 
     public long getId() {
         return id;

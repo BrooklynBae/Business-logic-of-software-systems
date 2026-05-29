@@ -24,7 +24,7 @@ public class Reservation {
     private Place place;
 
     @ManyToOne
-    @JoinColumn(name = "id_owner", nullable = false)
+    @JoinColumn(name = "id_user", nullable = false)
     private User user;
     @Column(name = "arrival", nullable = false)
     private LocalDate arrival;

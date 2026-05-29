@@ -5,25 +5,40 @@ import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
 import com.blps_lab1.demo.data.repository.UserRepository;
 import com.blps_lab1.demo.data.tables.User;
+import com.blps_lab1.demo.services.api.IMinioStorageService;
 import com.blps_lab1.demo.services.api.IUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional(readOnly = true)
 public class UserService implements IUserService {
     private final UserRepository userRepository;
+    private final IMinioStorageService minioStorageService;
 
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, IMinioStorageService minioStorageService) {
         this.userRepository = userRepository;
+        this.minioStorageService = minioStorageService;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UserDto updatePhoto(Long id, String photo) {
+    public UserDto updatePhoto(Long id, MultipartFile photoFile) {
         User user = findEntityById(id);
-        user.setPhoto(photo);
+
+        String newObjectName = minioStorageService.uploadPhoto(photoFile);
+        String oldObjectName = user.getPhoto();
+
+        user.setPhoto(newObjectName);
+
+        User saved = userRepository.save(user);
+
+        if (oldObjectName != null) {
+            minioStorageService.deletePhoto(oldObjectName);
+        }
+
         return toDto(user);
     }
 
@@ -35,8 +50,14 @@ public class UserService implements IUserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
-        findEntityById(id);
+        User user = findEntityById(id);
+        String photoName = user.getPhoto();
+
         userRepository.deleteById(id);
+
+        if (photoName != null) {
+            minioStorageService.deletePhoto(photoName);
+        }
     }
 
     @Override
