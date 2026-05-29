@@ -7,11 +7,12 @@ import com.blps_lab1.demo.dto.ReservationDto;
 import com.blps_lab1.demo.dto.ReservationRequest;
 
 public interface IReservationDraftService {
-    public ReservationDto createDraft(ReservationRequest request);
+    ReservationDto createDraft(ReservationRequest request);
 
-    public ReservationDto updateDate(Long id, DateRequest dateRequest);
+    ReservationDto updateDate(Long id, DateRequest dateRequest);
 
-    public void deleteExpiredDrafts();
-    //ReservationDraft findEntityById(Long id);
+    void deleteExpiredDrafts();
+    ReservationDraft findEntityById(Long id);
+    void removeDraft(Long id);
 
 }

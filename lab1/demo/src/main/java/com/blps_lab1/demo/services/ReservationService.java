@@ -2,11 +2,7 @@ package com.blps_lab1.demo.services;
 
 import com.blps_lab1.demo.data.repository.ReservationDraftRepository;
 import com.blps_lab1.demo.data.tables.*;
-import com.blps_lab1.demo.dto.CreateReservationEntityRequest;
-import com.blps_lab1.demo.dto.DateDto;
-import com.blps_lab1.demo.dto.DateRequest;
-import com.blps_lab1.demo.dto.ReservationDto;
-import com.blps_lab1.demo.dto.ReservationRequest;
+import com.blps_lab1.demo.dto.*;
 import com.blps_lab1.demo.services.api.*;
 import com.blps_lab1.demo.data.repository.ReservationRepository;
 import com.blps_lab1.demo.exception.BadRequestException;
@@ -128,7 +124,7 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
-    public Long confirmReservation(Long id) {
+    public Long confirmReservation(Long id, PaymentRequest request) {
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
 
         if (reservationDraft == null) {

@@ -52,14 +52,6 @@ public class ReservationDraft {
     @Column(name = "place_type", length = 25, nullable = false, unique = false)
     private PlaceType placeType;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "payment_type", length = 25, nullable = false, unique = false)
-//    private PaymentType paymentType;
-//
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "payment_method", length = 25, nullable = false, unique = false)
-//    private PaymentMethod paymentMethod;
-//
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -75,22 +67,6 @@ public class ReservationDraft {
             inverseJoinColumns = @JoinColumn(name = "service_option_id")
     )
     private Set<ServiceOption> serviceOptions = new HashSet<>();
-
-//    public PaymentType getPaymentType() {
-//        return paymentType;
-//    }
-//
-//    public void setPaymentType(PaymentType paymentType) {
-//        this.paymentType = paymentType;
-//    }
-//
-//    public PaymentMethod getPaymentMethod() {
-//        return paymentMethod;
-//    }
-//
-//    public void setPaymentMethod(PaymentMethod paymentMethod) {
-//        this.paymentMethod = paymentMethod;
-//    }
 
     public PlaceType getPlaceType() {
         return placeType;

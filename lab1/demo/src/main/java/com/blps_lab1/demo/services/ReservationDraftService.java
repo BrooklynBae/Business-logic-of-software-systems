@@ -142,6 +142,20 @@ public class ReservationDraftService implements IReservationDraftService {
         reservationDraftRepository.deleteByCreatedAtBefore(expiryTime);
     }
 
+    @Override
+    public ReservationDraft findEntityById(Long id) {
+        return reservationDraftRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Draft not found or expired with id = " + id));
+    }
+
+    @Override
+    @Transactional
+    public void removeDraft(Long id) {
+        if (!reservationDraftRepository.existsById(id)) {
+            throw new NotFoundException("Draft not found with id = " + id);
+        }
+        reservationDraftRepository.deleteById(id);
+    }
 
     private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, Set<ServiceOption> selectedOptions) {
         if (guestsAmount > place.getMaxGuests()) {
@@ -173,5 +187,6 @@ public class ReservationDraftService implements IReservationDraftService {
                 .mapToDouble(ServiceOption::getPricePerDay)
                 .sum() * totalDays;
 
-        return accommodationTotalPrice + servicesTotalPrice;    }
+        return accommodationTotalPrice + servicesTotalPrice;
+    }
 }
