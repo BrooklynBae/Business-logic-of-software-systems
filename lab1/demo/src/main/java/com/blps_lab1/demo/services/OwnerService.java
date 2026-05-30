@@ -6,6 +6,7 @@ import com.blps_lab1.demo.dto.CreateOwnerRequest;
 import com.blps_lab1.demo.dto.OwnerDto;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.IOwnerService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +30,11 @@ public class OwnerService implements IOwnerService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
     public OwnerDto create(CreateOwnerRequest request) {
         Owner owner = new Owner();
         owner.setName(request.getName());
+        owner.setLogin(request.getLogin());
         owner.setRequirenmentsMessage(
                 request.getRequirenmentsMessage() != null ? request.getRequirenmentsMessage() : false
         );
@@ -44,12 +47,14 @@ public class OwnerService implements IOwnerService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public OwnerDto findById(Long id) {
         return toDto(findEntityById(id));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MANAGE_USERS') or @ownerRepository.findById(#id).orElse(null)?.getLogin() == authentication.name")
     public void delete(Long id) {
         findEntityById(id);
         ownerRepository.deleteById(id);

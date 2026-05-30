@@ -40,7 +40,6 @@ public class MinioStorageService implements IMinioStorageService {
                                 .bucket(properties.bucket())
                                 .object(objectName)
                                 .contentType(file.getContentType())
-                                // Размер объекта важен для MinIO SDK, чтобы оптимизировать multipart upload
                                 .stream(inputStream, file.getSize(), -1)
                                 .build()
                 );

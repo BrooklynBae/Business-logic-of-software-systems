@@ -12,6 +12,7 @@ public class ReservationRequest {
     private Long userId;
     private Long idPlace;
     private List<Long> serviceOptionIds;
+    private String coverLetter;
 
     public Long getIdPlace() {
         return idPlace;
@@ -78,5 +79,13 @@ public class ReservationRequest {
 
     public void setServiceOptionIds(List<Long> serviceOptionIds) {
         this.serviceOptionIds = serviceOptionIds;
+    }
+
+    public String getCoverLetter() {
+        return coverLetter;
+    }
+
+    public void setCoverLetter(String coverLetter) {
+        this.coverLetter = coverLetter;
     }
 }

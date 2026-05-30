@@ -62,6 +62,12 @@ public class Reservation {
     )
     private Set<ServiceOption> serviceOptions = new HashSet<>();
 
+    @Column(name = "cover_letter", length = 5000, nullable = true)
+    private String coverLetter;
+
+    public String getCoverLetter() { return coverLetter; }
+    public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
+
     public PaymentType getPaymentType() {
         return paymentType;
     }

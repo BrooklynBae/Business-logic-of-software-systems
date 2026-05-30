@@ -20,7 +20,7 @@
       "created": 1717027200000,
       "name": "Base Environment",
       "data": {
-        "baseUrl": "http://localhost:8080"
+        "baseUrl": "http://localhost:8082"
       },
       "dataPropertyOrder": {
         "&": ["baseUrl"]
@@ -112,7 +112,7 @@
       "parentId": "fld_2",
       "name": "Шаг 2.2: Изменить даты черновика (Update Dates)",
       "url": "{{ baseUrl }}/reservation/1/dates",
-      "method": "PatchMapping",
+      "method": "PATCH",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"arrival\": \"2026-06-02\",\n  \"departure\": \"2026-06-06\"\n}"

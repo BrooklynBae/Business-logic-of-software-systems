@@ -10,6 +10,8 @@ import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +59,7 @@ public class ReservationDraftService implements IReservationDraftService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
     public ReservationDto createDraft(ReservationRequest request) {
         Place place = placeService.findEntityById(request.getIdPlace());
         User user = userService.findEntityById(request.getUserId());
@@ -67,6 +70,8 @@ public class ReservationDraftService implements IReservationDraftService {
         validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
 
         reservationService.ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
+
+        validateOwnerRequirements(place, request.getCoverLetter());
 
         double price = countPrice(
                 request.getArrival(),
@@ -87,6 +92,7 @@ public class ReservationDraftService implements IReservationDraftService {
         reservationDraft.setPrice(price);
         reservationDraft.setPlaceType(place.getPlaceType());
         reservationDraft.setServiceOptions(selectedOptions);
+        reservationDraft.setCoverLetter(request.getCoverLetter());
 
         reservationDraftRepository.save(reservationDraft);
 
@@ -95,6 +101,7 @@ public class ReservationDraftService implements IReservationDraftService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
     public ReservationDto updateDate(Long id, DateRequest dateRequest) {
         ReservationDraft reservationDraft = reservationDraftRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Draft not found or expired"));
@@ -124,6 +131,7 @@ public class ReservationDraftService implements IReservationDraftService {
     @Override
     @Scheduled(cron = "0 */10 * * * *")
     @Transactional
+    @PreAuthorize("permitAll()")
     public void deleteExpiredDrafts() {
         int minutesToLive = 30;
         LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(minutesToLive);
@@ -138,11 +146,20 @@ public class ReservationDraftService implements IReservationDraftService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
     public void removeDraft(Long id) {
         if (!reservationDraftRepository.existsById(id)) {
             throw new NotFoundException("Draft not found with id = " + id);
         }
         reservationDraftRepository.deleteById(id);
+    }
+
+    private void validateOwnerRequirements(Place place, String coverLetter) {
+        if (place.getOwner() != null && Boolean.TRUE.equals(place.getOwner().getRequirenmentsMessage())) {
+            if (coverLetter == null || coverLetter.trim().isBlank()) {
+                throw new BadRequestException("The owner of this place requires a cover letter for reservation.");
+            }
+        }
     }
 
     private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, Set<ServiceOption> selectedOptions) {

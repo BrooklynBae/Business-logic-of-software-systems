@@ -18,7 +18,7 @@ public class PlaceController {
     }
 
     @GetMapping("/town/{town}")
-    public List<PlaceDto> getPlacesByTown(@PathVariable String town) {
+    public List<PlaceDto> getPlacesByTown(@PathVariable("town") String town) {
         return placeService.findByTown(town);
     }
 

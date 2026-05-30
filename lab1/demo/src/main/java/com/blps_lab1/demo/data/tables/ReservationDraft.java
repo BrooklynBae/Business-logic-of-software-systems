@@ -60,6 +60,12 @@ public class ReservationDraft {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "cover_letter", length = 5000, nullable = true)
+    private String coverLetter;
+
+    public String getCoverLetter() { return coverLetter; }
+    public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
+
     @ManyToMany
     @JoinTable(
             name = "reservation_services",

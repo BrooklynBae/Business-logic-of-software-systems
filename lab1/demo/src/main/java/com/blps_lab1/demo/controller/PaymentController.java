@@ -16,11 +16,6 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-//    @PatchMapping("/reservation/{id}")
-//    public ResponseEntity<ReservationDto> updatePaymentData(@PathVariable Long id, @RequestBody PaymentRequest request) {
-//        return ResponseEntity.ok(paymentService.updatePaymentData(id, request));
-//    }
-
     @PostMapping("/reservation/{id}/process")
     public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable("id") Long id, @RequestBody PaymentRequest request) {
         return ResponseEntity.ok(paymentService.processPayment(id, request));

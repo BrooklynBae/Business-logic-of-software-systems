@@ -6,6 +6,7 @@ import com.blps_lab1.demo.dto.CreateServiceOptionRequest;
 import com.blps_lab1.demo.dto.ServiceOptionDto;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.services.api.IServiceOptionService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -30,6 +31,7 @@ public class ServiceOptionService implements IServiceOptionService {
 //    }
 
     @Override
+    @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT')")
     public List<ServiceOptionDto> findAll() {
         return serviceOptionRepository.findAll().stream()
                 .map(this::toDto)
@@ -37,6 +39,7 @@ public class ServiceOptionService implements IServiceOptionService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public List<ServiceOption> findEntitiesByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();

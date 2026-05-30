@@ -7,6 +7,7 @@ import com.blps_lab1.demo.data.repository.UserRepository;
 import com.blps_lab1.demo.data.tables.User;
 import com.blps_lab1.demo.services.api.IMinioStorageService;
 import com.blps_lab1.demo.services.api.IUserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ public class UserService implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MANAGE_USERS') or @appSecurity.isSelfUser(#a0, authentication.name)") //мб добавить валидацию фото
     public UserDto updatePhoto(Long id, MultipartFile photoFile) {
         User user = findEntityById(id);
 
@@ -43,12 +45,14 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('PERM_MANAGE_USERS') or @userRepository.findById(#a0).orElse(null)?.getLogin() == authentication.name")
     public UserDto findById(Long id) {
         return toDto(findEntityById(id));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MANAGE_USERS') or @userRepository.findById(#a0).orElse(null)?.getLogin() == authentication.name")
     public void delete(Long id) {
         User user = findEntityById(id);
         String photoName = user.getPhoto();
@@ -62,10 +66,12 @@ public class UserService implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
     public UserDto create(CreateUserRequest request) {
         User user = new User();
         user.setName(request.getName());
         user.setPhoto(request.getPhoto());
+        user.setLogin(request.getLogin());
 
         User saved = userRepository.save(user);
         return toDto(saved);

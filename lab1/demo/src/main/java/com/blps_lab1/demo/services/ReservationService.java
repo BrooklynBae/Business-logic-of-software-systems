@@ -7,6 +7,8 @@ import com.blps_lab1.demo.data.repository.ReservationRepository;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +64,7 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
+    @PostAuthorize("returnObject.user.name == authentication.name or returnObject.owner.name == authentication.name or hasAuthority('PERM_MODERATE_DRAFTS')")
     public ReservationDto findReservation(long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Reservation not found with id = " + id));
@@ -70,6 +73,7 @@ public class ReservationService implements IReservationService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
     public void ensureDatesAvailable(Long idPlace, LocalDate arrival, LocalDate departure) {
         List<Reservation> conflicts = reservationRepository.findConflictsForUpdate(idPlace, arrival, departure);
 
@@ -120,6 +124,7 @@ public class ReservationService implements IReservationService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT')")
     public Long confirmReservation(Long id, PaymentRequest request) {
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
 
@@ -138,6 +143,7 @@ public class ReservationService implements IReservationService {
         reservation.setPlaceType(reservationDraft.getPlace().getPlaceType());
         reservation.setPaymentType(request.getPaymentType());
         reservation.setPaymentMethod(request.getPaymentMethod());
+        reservation.setCoverLetter(reservationDraft.getCoverLetter());
 
         if (reservationDraft.getServiceOptions() != null) {
             reservation.setServiceOptions(new HashSet<>(reservationDraft.getServiceOptions()));
@@ -149,55 +155,31 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS') or @appSecurity.isSelfUser(@reservationRepository.findById(#a0).orElse(null)?.getUser()?.getId(), authentication.name)")
     public void deleteReservation(Long id) {
         findReservation(id);
         reservationRepository.deleteById(id);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public ReservationDto createReservationEntity(CreateReservationEntityRequest request) {
-        Place place = placeService.findEntityById(request.getPlaceId());
-        User user = userService.findEntityById(request.getUserId());
-
-        Set<ServiceOption> selectedOptions = new HashSet<>(
-                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
-        );
-
-        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
-        ensureDatesAvailable(place.getId(), request.getArrival(), request.getDeparture());
-
-        Reservation reservation = new Reservation();
-        reservation.setPlace(place);
-        reservation.setUser(user);
-        reservation.setArrival(request.getArrival());
-        reservation.setDeparture(request.getDeparture());
-        reservation.setGuestsAmount(request.getGuestsAmount());
-        reservation.setPetsAmount(request.getPetsAmount());
-        reservation.setPlaceType(place.getPlaceType());
-        reservation.setPaymentType(request.getPaymentType());
-        reservation.setPaymentMethod(request.getPaymentMethod());
-        reservation.setServiceOptions(selectedOptions);
-
-        double price = countPrice(
-                request.getArrival(),
-                request.getDeparture(),
-                request.getGuestsAmount(),
-                request.getPetsAmount(),
-                place,
-                selectedOptions
-        );
-        reservation.setPrice(price);
-
-        Reservation saved = reservationRepository.save(reservation);
-        return toReservationDto(saved);
-    }
-
-    @Override
+    @PreAuthorize("permitAll()")
     public List<DateDto> findAllReservedDates(Long placeId) {
         return reservationRepository.findByPlaceId(placeId).stream()
                 .map(this::toDateDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS')")
+    public ReservationDto updateCoverLetterByAdmin(Long id, String newLetter) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Reservation not found with id = " + id));
+
+        reservation.setCoverLetter(newLetter);
+
+        Reservation saved = reservationRepository.save(reservation);
+        return toReservationDto(saved);
     }
 }
 

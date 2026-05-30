@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -43,6 +45,12 @@ public class Place {
     @Column(name = "rating", nullable = false, unique = false)
     @ColumnDefault("0")
     private double rating;
+
+    @OneToMany(mappedBy = "place", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "place", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<ReservationDraft> reservationDrafts = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "id_owner", nullable = false)

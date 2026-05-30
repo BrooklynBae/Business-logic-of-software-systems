@@ -16,9 +16,8 @@ public class ReservationController {
         this.reservationService = reservationService;
         this.reservationDraftService = reservationDraftService;
     }
-    //сначала create draft -> payment = null, потом confirm payment ->
-    //я возвращаю айди созданного черновика and price
-    @PostMapping
+
+    @PostMapping("/entity")
     public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
         ReservationDto response = reservationDraftService.createDraft(request);
         return ResponseEntity.ok(response);
@@ -39,16 +38,17 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/entity")
-    public ResponseEntity<ReservationDto> createReservationEntity(@RequestBody CreateReservationEntityRequest request) {
-        ReservationDto response = reservationService.createReservationEntity(request);
-        return ResponseEntity.ok(response);
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         reservationService.deleteReservation(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/cover-letter")
+    public ResponseEntity<ReservationDto> updateCoverLetterByAdmin(
+            @PathVariable("id") Long id,
+            @RequestBody String newLetter
+    ) {
+        return ResponseEntity.ok(reservationService.updateCoverLetterByAdmin(id, newLetter));
+    }
 }
-    //порядок действий: мы создаем черновик, когда мы его создаем, то должны получать текущие занятые даты из бд. потом берем этот черновик и задаем способ оплаты, также проверяя занятые даты. дальше делаем бронь, берем черновик и способ оплаты, снова проверяем занятые даты, если успешно - кладем в бд.

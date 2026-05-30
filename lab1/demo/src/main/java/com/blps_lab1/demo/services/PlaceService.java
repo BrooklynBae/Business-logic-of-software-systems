@@ -11,6 +11,7 @@ import com.blps_lab1.demo.services.api.IReservationService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +46,7 @@ public class PlaceService implements IPlaceService {
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public List<PlaceDto> findByTown(String town) {
         return placeRepository.findByTownIgnoreCase(town).stream()
                 .map(place -> toResponse(place))
@@ -52,6 +54,7 @@ public class PlaceService implements IPlaceService {
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public List<PlaceDto> findAllSortedByRating() {
         return placeRepository.findAllByOrderByRatingDesc()
                 .stream()
@@ -60,12 +63,14 @@ public class PlaceService implements IPlaceService {
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public PlaceDto findPlace(long id) {
         return toResponse(findEntityById(id));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MANAGE_OWN_PLACES')")
     public PlaceDto create(CreatePlaceRequest request) {
         Place place = new Place();
         place.setTown(request.getTown());
@@ -84,6 +89,7 @@ public class PlaceService implements IPlaceService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_MANAGE_USERS') or " + "@placeRepository.findById(#a0).orElse(null)?.getOwner()?.getLogin() == authentication.name")
     public void delete(Long id) {
         findEntityById(id);
         placeRepository.deleteById(id);

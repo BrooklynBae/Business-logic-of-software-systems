@@ -12,6 +12,7 @@ import com.blps_lab1.demo.services.api.IPaymentService;
 import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class PaymentService implements IPaymentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT') and @appSecurity.isDraftOwner(#a0, authentication.name)")
     public PaymentResponseDto processPayment(Long id, PaymentRequest request) {
 
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
