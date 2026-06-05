@@ -3,6 +3,7 @@ package com.blps_lab1.demo.controller;
 import com.blps_lab1.demo.dto.*;
 import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class ReservationController {
     }
 
     @PostMapping("/entity")
-    public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
+    public ResponseEntity<ReservationDto> createReservation(@Valid @RequestBody ReservationRequest request) {
         ReservationDto response = reservationDraftService.createDraft(request);
         return ResponseEntity.ok(response);
     }
@@ -26,7 +27,7 @@ public class ReservationController {
     @PatchMapping("/{id}/dates")
     public ResponseEntity<ReservationDto> updateDate(
             @PathVariable("id") Long id,
-            @RequestBody DateRequest request
+            @Valid @RequestBody DateRequest request
     ) {
         ReservationDto response = reservationDraftService.updateDate(id, request);
         return ResponseEntity.ok(response);
@@ -49,6 +50,9 @@ public class ReservationController {
             @PathVariable("id") Long id,
             @RequestBody String newLetter
     ) {
+        if (newLetter == null || newLetter.trim().isBlank()) {
+            throw new IllegalArgumentException("Cover letter text cannot be null or empty");
+        }
         return ResponseEntity.ok(reservationService.updateCoverLetterByAdmin(id, newLetter));
     }
 }

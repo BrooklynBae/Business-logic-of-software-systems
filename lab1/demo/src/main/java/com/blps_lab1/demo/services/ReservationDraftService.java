@@ -24,7 +24,7 @@ import java.util.Set;
 
 @Service
 @EnableScheduling
-@Transactional(readOnly = true)
+@Transactional
 public class ReservationDraftService implements IReservationDraftService {
     private final ReservationDraftRepository reservationDraftRepository;
     private final IReservationService reservationService;
@@ -61,6 +61,22 @@ public class ReservationDraftService implements IReservationDraftService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("permitAll()")
     public ReservationDto createDraft(ReservationRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Reservation request body cannot be null");
+        }
+        if (request.getIdPlace() == null) {
+            throw new IllegalArgumentException("Place ID cannot be null");
+        }
+        if (request.getUserId() == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (request.getArrival() == null || request.getDeparture() == null) {
+            throw new BadRequestException("Arrival and departure dates must be specified");
+        }
+        if (request.getGuestsAmount() == null || request.getGuestsAmount() <= 0) {
+            throw new BadRequestException("Guests amount must be a positive integer");
+        }
+
         Place place = placeService.findEntityById(request.getIdPlace());
         User user = userService.findEntityById(request.getUserId());
         Set<ServiceOption> selectedOptions = new HashSet<>(
@@ -103,6 +119,16 @@ public class ReservationDraftService implements IReservationDraftService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
     public ReservationDto updateDate(Long id, DateRequest dateRequest) {
+        if (id == null) {
+            throw new IllegalArgumentException("Draft ID cannot be null");
+        }
+        if (dateRequest == null) {
+            throw new IllegalArgumentException("Date request body cannot be null");
+        }
+        if (dateRequest.getArrival() == null || dateRequest.getDeparture() == null) {
+            throw new BadRequestException("Arrival and departure dates must be specified");
+        }
+
         ReservationDraft reservationDraft = reservationDraftRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Draft not found or expired"));
 
@@ -140,6 +166,9 @@ public class ReservationDraftService implements IReservationDraftService {
 
     @Override
     public ReservationDraft findEntityById(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Id cannot be null");
+        }
         return reservationDraftRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Draft not found or expired with id = " + id));
     }
@@ -148,6 +177,9 @@ public class ReservationDraftService implements IReservationDraftService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
     public void removeDraft(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Id cannot be null");
+        }
         if (!reservationDraftRepository.existsById(id)) {
             throw new NotFoundException("Draft not found with id = " + id);
         }

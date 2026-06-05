@@ -1,6 +1,7 @@
 package com.blps_lab1.demo.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -45,8 +46,12 @@ public class JwtTokenUtils {
     }
 
     public Boolean isTokenExpired(String token) {
-        final Date expiration = getClaimFromToken(token, Claims::getExpiration);
-        return expiration.before(new Date());
+        try {
+            final Date expiration = getClaimFromToken(token, Claims::getExpiration);
+            return expiration.before(new Date());
+        } catch (com.blps_lab1.demo.exception.JwtAuthenticationException e) {
+            return true;
+        }
     }
 
     public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
@@ -55,10 +60,16 @@ public class JwtTokenUtils {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(SIGNING_KEY)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(SIGNING_KEY)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (ExpiredJwtException e) {
+            throw new com.blps_lab1.demo.exception.JwtAuthenticationException("JWT token is expired");
+        } catch (Exception e) {
+            throw new com.blps_lab1.demo.exception.JwtAuthenticationException("Invalid JWT token");
+        }
     }
 }

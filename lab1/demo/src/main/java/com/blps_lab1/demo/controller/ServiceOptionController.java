@@ -17,11 +17,6 @@ public class ServiceOptionController {
         this.serviceOptionService = serviceOptionService;
     }
 
-//    @PostMapping
-//    public ResponseEntity<ServiceOptionDto> create(@RequestBody CreateServiceOptionRequest request) {
-//        return ResponseEntity.ok(serviceOptionService.create(request));
-//    }
-
     @GetMapping
     public ResponseEntity<List<ServiceOptionDto>> findAll() {
         return ResponseEntity.ok(serviceOptionService.findAll());

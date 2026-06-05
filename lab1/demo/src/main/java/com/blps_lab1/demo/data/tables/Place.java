@@ -24,7 +24,7 @@ public class Place {
     @Column(name = "name", length = 30, nullable = false, unique = false)
     private String name;
 
-    @Column(name = "description", length = 30, nullable = false, unique = false)
+    @Column(name = "description", length = 500, nullable = false, unique = false)
     private String description;
 
     @Enumerated(EnumType.STRING)

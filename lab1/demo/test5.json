@@ -1,0 +1,427 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-06-05T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2025.1.0",
+  "resources": [
+    {
+      "_id": "wrk_blps_lab1",
+      "_type": "workspace",
+      "name": "BLPS Lab 1 - Booking, Infrastructure & Complete Security ABAC Suite",
+      "parentId": null
+    },
+    {
+      "_id": "env_global",
+      "_type": "environment",
+      "parentId": "wrk_blps_lab1",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8082"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": null,
+      "isPrivate": false
+    },
+    {
+      "_id": "fld_registration",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "1. Регистрация Профилей (Публичный Доступ)"
+    },
+    {
+      "_id": "req_create_user_profile",
+      "_type": "request",
+      "parentId": "fld_registration",
+      "name": "Регистрация профиля User (В БД + XML)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/user",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alexey Client Profile\",\n  \"login\": \"client_alex\",\n  \"password\": \"password123\",\n  \"photo\": null,\n  \"roles\": [\"ROLE_USER\"],\n  \"authorities\": [\"PERM_PROCESS_PAYMENT\"]\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "metaSortKey": -1000000
+    },
+    {
+      "_id": "req_create_owner_profile",
+      "_type": "request",
+      "parentId": "fld_registration",
+      "name": "Регистрация профиля Владельца (В БД + XML)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/owners",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Ivan Owner Profile\",\n  \"login\": \"owner_ivan\",\n  \"password\": \"ownerpass\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": false\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "metaSortKey": -2000000
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "2. Аутентификация зарегистрированных аккаунтов"
+    },
+    {
+      "_id": "req_auth_user",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - client_alex (User)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"client_alex\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1000000
+    },
+    {
+      "_id": "req_auth_owner",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - owner_ivan (Owner)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"owner_ivan\",\n  \"password\": \"ownerpass\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1500000
+    },
+    {
+      "_id": "req_auth_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - admin_sergey (Admin Корневой)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin_sergey\",\n  \"password\": \"adminroot\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1800000
+    },
+    {
+      "_id": "fld_user_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "3. Сценарии Пользователя & Публичный Доступ"
+    },
+    {
+      "_id": "req_upload_user_photo",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Загрузка фото (Успешно - на свой аккаунт)",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/user/{% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %}/photo",
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [{ "name": "file", "type": "file", "fileName": "avatar.png", "value": "" }]
+      },
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -2100000
+    },
+    {
+      "_id": "req_upload_user_photo_violation",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Загрузка фото (Нарушение: Владелец лезет к Юзеру -> 403)",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/user/{% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %}/photo",
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [{ "name": "file", "type": "file", "fileName": "hacker.png", "value": "" }]
+      },
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -2200000
+    },
+    {
+      "_id": "req_get_places_by_town",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Просмотр жилья по городу (Анонимно без токена -> 200)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/places/town/Moscow",
+      "body": {},
+      "headers": [],
+      "metaSortKey": -2300000
+    },
+    {
+      "_id": "req_get_places_by_rating",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Просмотр по рейтингу (Анонимно без токена -> 200)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/places/rating",
+      "body": {},
+      "headers": [],
+      "metaSortKey": -2400000
+    },
+    {
+      "_id": "fld_owner_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "4. Сценарии Владельца & Места жилья"
+    },
+    {
+      "_id": "req_create_own_place",
+      "_type": "request",
+      "parentId": "fld_owner_scenarios",
+      "name": "Создание собственного места (Владельцем)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/places",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Grand Imperial Technical Suite\",\n  \"town\": \"Moscow\",\n  \"description\": \"Equipped with high-speed networks and comfort\",\n  \"placeType\": \"APARTMENT\",\n  \"pricePerNight\": 2500.0,\n  \"maxGuests\": 4,\n  \"rating\": 4.9,\n  \"petsAllowed\": true,\n  \"ownerId\": {% response 'body', 'req_create_owner_profile', 'b64::JC5pZA==::46b', 'never', 60 %}\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -3100000
+    },
+    {
+      "_id": "req_create_place_violation",
+      "_type": "request",
+      "parentId": "fld_owner_scenarios",
+      "name": "Создание места (Нарушение: Юзер пытается создать место -> 403)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/places",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Illegal Place\",\n  \"town\": \"Moscow\",\n  \"pricePerNight\": 100.0,\n  \"ownerId\": {% response 'body', 'req_create_owner_profile', 'b64::JC5pZA==::46b', 'never', 60 %}\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -3200000
+    },
+    {
+      "_id": "fld_draft_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "5. Управление Черновиками & Валидация Писем"
+    },
+    {
+      "_id": "req_create_draft_validation_fail",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Создание черновика (Валидация: Письмо пустое, а хозяин требует -> 400)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reservation/entity",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idPlace\": {% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"userId\": {% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"arrival\": \"2026-07-01\",\n  \"departure\": \"2026-07-10\",\n  \"guestsAmount\": 2,\n  \"petsAmount\": 0,\n  \"serviceOptionIds\": [],\n  \"coverLetter\": \"\" \n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4000000
+    },
+    {
+      "_id": "req_create_draft_success",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Создание черновика (Успешно - Письмо заполнено -> 200)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reservation/entity",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idPlace\": {% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"userId\": {% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"arrival\": \"2026-07-01\",\n  \"departure\": \"2026-07-10\",\n  \"guestsAmount\": 2,\n  \"petsAmount\": 0,\n  \"serviceOptionIds\": [],\n  \"coverLetter\": \"Hello! I am a backend software engineer working on system architecture. I promise to keep the apartment clean.\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4100000
+    },
+    {
+      "_id": "req_update_draft_dates",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Обновление дат и письма (Успешно - Создателем)",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/dates",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-07-03\",\n  \"departure\": \"2026-07-12\",\n  \"coverLetter\": \"Updated cover letter text: shifting dates due to an urgent sprint release.\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4200000
+    },
+    {
+      "_id": "req_update_draft_violation",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Обновление черновика (Нарушение: Владелец пытается изменить даты юзера -> 403)",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/dates",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-07-05\",\n  \"departure\": \"2026-07-15\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4300000
+    },
+    {
+      "_id": "fld_payment_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "6. Проведение Оплаты & Конвертация в Бронь"
+    },
+    {
+      "_id": "req_payment_violation",
+      "_type": "request",
+      "parentId": "fld_payment_scenarios",
+      "name": "Оплата черновика (Нарушение: Админ пытается оплатить чужой черновик -> 403)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payment/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/process",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"DELAYED\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5000000
+    },
+    {
+      "_id": "req_payment_success_materialize",
+      "_type": "request",
+      "parentId": "fld_payment_scenarios",
+      "name": "Оплата черновика (Успешно - Создателем черновика -> 200 Бронь)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payment/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/process",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"DELAYED\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5100000
+    },
+    {
+      "_id": "fld_post_reservation",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "7. Контроль Доступа к Готовой Брони (Финал)"
+    },
+    {
+      "_id": "req_owner_read_letter",
+      "inversion": false,
+      "_type": "request",
+      "parentId": "fld_post_reservation",
+      "name": "Просмотр брони Владельцем (Разрешено ТЗ: Владелец видит письмо -> 200)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_payment_success_materialize', 'b64::JC5yZXNlcnZhdGlvbklk::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -6000000
+    },
+    {
+      "_id": "req_client_edit_letter_violation",
+      "_type": "request",
+      "parentId": "fld_post_reservation",
+      "name": "Редактирование письма Юзером (Запрещено ТЗ: Оплачено -> Эндпоинта нет / 403)",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_payment_success_materialize', 'b64::JC5yZXNlcnZhdGlvbklk::46b', 'never', 60 %}/cover-letter",
+      "body": {
+        "mimeType": "text/plain",
+        "text": "Hacker text trying to modify historical contract data."
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "text/plain" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -6100000
+    },
+    {
+      "_id": "req_admin_edit_letter_success",
+      "_type": "request",
+      "parentId": "fld_post_reservation",
+      "name": "Редактирование письма Админом (Разрешено ТЗ -> 200 OK)",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_payment_success_materialize', 'b64::JC5yZXNlcnZhdGlvbklk::46b', 'never', 60 %}/cover-letter",
+      "body": {
+        "mimeType": "text/plain",
+        "text": "Moderated by administrator: Content verified and adjusted according to global rules."
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "text/plain" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -6200000
+    },
+    {
+      "_id": "fld_destructive_teardown",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "8. Деструктивные Действия & Проверка Каскадов"
+    },
+    {
+      "_id": "req_delete_place_client_violation",
+      "_type": "request",
+      "parentId": "fld_destructive_teardown",
+      "name": "Удаление места Юзером (Нарушение: Клиент пытается снести отель -> 403)",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/places/{% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -7000000
+    },
+    {
+      "_id": "req_delete_place_cascade_success",
+      "_type": "request",
+      "parentId": "fld_destructive_teardown",
+      "name": "Удаление места Владельцем (Успешно - Каскад очистит брони -> 204)",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/places/{% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -7100000
+    },
+    {
+      "_id": "req_delete_user_by_admin",
+      "_type": "request",
+      "parentId": "fld_destructive_teardown",
+      "name": "Удаление профиля Юзера Админом (Успешно -> 204)",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/user/{% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -7200000
+    }
+  ]
+}

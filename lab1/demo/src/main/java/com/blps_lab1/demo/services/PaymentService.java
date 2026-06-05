@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Random;
 
 @Service
+@Transactional
 public class PaymentService implements IPaymentService {
 
     private final IReservationDraftService reservationDraftService;
@@ -34,6 +35,12 @@ public class PaymentService implements IPaymentService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT') and @appSecurity.isDraftOwner(#a0, authentication.name)")
     public PaymentResponseDto processPayment(Long id, PaymentRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("Reservation ID cannot be null");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Payment request body cannot be null");
+        }
 
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
         if (reservationDraft == null) {
@@ -41,14 +48,14 @@ public class PaymentService implements IPaymentService {
         }
 
         User user = reservationDraft.getUser();
-        if (user.getPhoto() == null || user.getPhoto().isBlank()) {
-            return PaymentResponseDto.builder()
-                    .reservationId(id)
-                    .available(false)
-                    .success(false)
-                    .message("Please, add your photo")
-                    .build();
+        if (user == null) {
+            throw new IllegalStateException("Draft is not linked to any user");
         }
+
+        if (user.getPhoto() == null || user.getPhoto().isBlank()) {
+            throw new BadRequestException("Payment failed: Please, add your photo before processing payment");
+        }
+
         if (request.getPaymentType() == null || request.getPaymentMethod() == null) {
             throw new BadRequestException("Payment data must be set before processing payment");
         }

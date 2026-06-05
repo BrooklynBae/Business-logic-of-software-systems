@@ -25,6 +25,10 @@ public class MinioStorageService implements IMinioStorageService {
     }
 
     public String uploadPhoto(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Cannot upload an empty file");
+        }
+
         try {
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(properties.bucket()).build());
             if (!found) {
@@ -46,8 +50,10 @@ public class MinioStorageService implements IMinioStorageService {
             }
 
             return objectName;
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload file to MinIO", e);
+            throw new RuntimeException("Internal S3 storage error during file upload", e);
         }
     }
 
@@ -61,7 +67,7 @@ public class MinioStorageService implements IMinioStorageService {
                             .build()
             );
         } catch (Exception e) {
-            System.err.println("Failed to delete object from MinIO: " + objectName + ". Error: " + e.getMessage());
+            throw new RuntimeException("Internal S3 storage error during file deletion", e);
         }
     }
 

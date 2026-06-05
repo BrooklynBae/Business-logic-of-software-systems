@@ -20,16 +20,6 @@ public class ServiceOptionService implements IServiceOptionService {
         this.serviceOptionRepository = serviceOptionRepository;
     }
 
-//    @Override
-//    public ServiceOptionDto create(CreateServiceOptionRequest request) {
-//        ServiceOption serviceOption = new ServiceOption();
-//        serviceOption.setName(request.getName());
-//        serviceOption.setDescription(request.getDescription());
-//        serviceOption.setPricePerDay(request.getPricePerDay());
-//        serviceOption.setPetRelated(request.getPetRelated() != null && request.getPetRelated());
-//        return toDto(serviceOptionRepository.save(serviceOption));
-//    }
-
     @Override
     @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT')")
     public List<ServiceOptionDto> findAll() {
@@ -44,6 +34,7 @@ public class ServiceOptionService implements IServiceOptionService {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
+
         List<ServiceOption> options = serviceOptionRepository.findAllById(ids);
         if (options.size() != ids.size()) {
             throw new BadRequestException("Some service options were not found");

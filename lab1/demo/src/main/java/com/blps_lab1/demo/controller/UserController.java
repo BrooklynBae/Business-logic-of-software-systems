@@ -2,6 +2,7 @@ package com.blps_lab1.demo.controller;
 
 import com.blps_lab1.demo.dto.CreateUserRequest;
 import com.blps_lab1.demo.dto.UserDto;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +19,17 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<UserDto> create(@Valid @RequestBody CreateUserRequest request) {
         UserDto response = userService.create(request);
         return ResponseEntity.ok(response);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
         UserDto response = userService.findById(id);
@@ -39,12 +42,12 @@ public class UserController {
             @RequestParam("file") MultipartFile file) {
 
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Photo file cannot be null or empty");
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Only image files are allowed");
         }
 
         UserDto updatedUser = userService.updatePhoto(id, file);

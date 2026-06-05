@@ -1,9 +1,18 @@
 package com.blps_lab1.demo.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class CreateOwnerRequest {
 
+    @NotBlank(message = "Login cannot be empty or null")
     private String login;
+
+    @NotBlank(message = "Password cannot be empty or null")
+    private String password;
+
+    @NotBlank(message = "Name cannot be empty or null")
     private String name;
+
     private Boolean requirenmentsMessage;
     private Boolean requirenmentsPhoto;
 
@@ -16,6 +25,14 @@ public class CreateOwnerRequest {
 
     public void setLogin(String login) {
         this.login = login;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getName() {

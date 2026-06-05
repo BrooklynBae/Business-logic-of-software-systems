@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 public class ReservationService implements IReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -64,7 +64,7 @@ public class ReservationService implements IReservationService {
     }
 
     @Override
-    @PostAuthorize("returnObject.user.name == authentication.name or returnObject.owner.name == authentication.name or hasAuthority('PERM_MODERATE_DRAFTS')")
+    @PostAuthorize("returnObject.user.login == authentication.name or returnObject.owner.login == authentication.name or hasAuthority('PERM_MODERATE_DRAFTS')")
     public ReservationDto findReservation(long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Reservation not found with id = " + id));
@@ -75,11 +75,17 @@ public class ReservationService implements IReservationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("permitAll()")
     public void ensureDatesAvailable(Long idPlace, LocalDate arrival, LocalDate departure) {
-        List<Reservation> conflicts = reservationRepository.findConflictsForUpdate(idPlace, arrival, departure);
-
+        if (idPlace == null) {
+            throw new IllegalArgumentException("Place ID cannot be null");
+        }
+        if (arrival == null || departure == null) {
+            throw new BadRequestException("Arrival and departure dates must be specified");
+        }
         if (arrival.isAfter(departure)) {
             throw new BadRequestException("Arrival date later than departure");
         }
+
+        List<Reservation> conflicts = reservationRepository.findConflictsForUpdate(idPlace, arrival, departure);
 
         if (!conflicts.isEmpty()) {
             String conflictPeriods = conflicts.stream()
@@ -92,6 +98,9 @@ public class ReservationService implements IReservationService {
     }
 
     private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, Set<ServiceOption> selectedOptions) {
+        if (guestsAmount == null || guestsAmount <= 0) {
+            throw new BadRequestException("Guests amount must be a positive integer");
+        }
         if (guestsAmount > place.getMaxGuests()) {
             throw new BadRequestException("This place can not accommodate " + guestsAmount + " guests. Limit - " + place.getMaxGuests());
         }
@@ -126,6 +135,13 @@ public class ReservationService implements IReservationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT')")
     public Long confirmReservation(Long id, PaymentRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("Draft ID cannot be null");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Payment request body cannot be null");
+        }
+
         ReservationDraft reservationDraft = reservationDraftService.findEntityById(id);
 
         if (reservationDraft == null) {
@@ -157,6 +173,9 @@ public class ReservationService implements IReservationService {
     @Override
     @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS') or @appSecurity.isSelfUser(@reservationRepository.findById(#a0).orElse(null)?.getUser()?.getId(), authentication.name)")
     public void deleteReservation(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Reservation ID cannot be null");
+        }
         findReservation(id);
         reservationRepository.deleteById(id);
     }
@@ -164,6 +183,9 @@ public class ReservationService implements IReservationService {
     @Override
     @PreAuthorize("permitAll()")
     public List<DateDto> findAllReservedDates(Long placeId) {
+        if (placeId == null) {
+            throw new IllegalArgumentException("Place ID cannot be null");
+        }
         return reservationRepository.findByPlaceId(placeId).stream()
                 .map(this::toDateDto)
                 .toList();
@@ -173,6 +195,9 @@ public class ReservationService implements IReservationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS')")
     public ReservationDto updateCoverLetterByAdmin(Long id, String newLetter) {
+        if (id == null) {
+            throw new IllegalArgumentException("Reservation ID cannot be null");
+        }
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Reservation not found with id = " + id));
 
@@ -182,4 +207,3 @@ public class ReservationService implements IReservationService {
         return toReservationDto(saved);
     }
 }
-

@@ -1,20 +1,18 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <users-realm>
-    <user username="client_alex" password="{noop}password123">
-        <role name="ROLE_USER"/>
-        <authority name="PERM_PROCESS_PAYMENT"/>
-    </user>
 
-    <user username="owner_ivan" password="{noop}ownerpass">
-        <role name="ROLE_OWNER"/>
-        <authority name="PERM_MANAGE_OWN_PLACES"/>
-    </user>
+    <user password="{noop}adminroot" username="admin_sergey">
 
-    <user username="admin_sergey" password="{noop}adminroot">
         <role name="ROLE_ADMIN"/>
+
         <authority name="PERM_PROCESS_PAYMENT"/>
+
         <authority name="PERM_MANAGE_OWN_PLACES"/>
+
         <authority name="PERM_MANAGE_USERS"/>
+
         <authority name="PERM_MODERATE_DRAFTS"/>
+
     </user>
+
 </users-realm>

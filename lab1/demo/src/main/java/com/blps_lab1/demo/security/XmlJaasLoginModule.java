@@ -5,6 +5,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.*;
+import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 import java.io.File;
@@ -42,19 +43,28 @@ public class XmlJaasLoginModule implements LoginModule {
 
             String xmlPath = (String) options.get("xmlFilePath");
             if (xmlPath == null) {
-                throw new LoginException("xmlFilePath option is missing in jaas.config");
+                throw new IllegalStateException("xmlFilePath option is missing in jaas.config");
             }
 
-            return validateUserInXml(xmlPath, username, password);
+            boolean isValid = validateUserInXml(xmlPath, username, password);
+
+            if (!isValid) {
+                throw new FailedLoginException("Invalid username or password");
+            }
+
+            return true;
+
+        } catch (LoginException | IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
-            throw new LoginException("JAAS XML Authentication failed: " + e.getMessage());
+            throw new RuntimeException("Internal server error during JAAS XML processing", e);
         }
     }
 
     private boolean validateUserInXml(String path, String user, String pass) throws Exception {
         File xmlFile = new File(path);
         if (!xmlFile.exists()) {
-            throw new LoginException("XML users file not found at: " + xmlFile.getAbsolutePath());
+            throw new IllegalStateException("XML users file not found at: " + xmlFile.getAbsolutePath());
         }
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
