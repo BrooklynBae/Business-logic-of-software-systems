@@ -3,18 +3,21 @@ package com.blps_lab1.demo.data.tables;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "Place_reservations")
-public class Reservation {
-    public Reservation(){
-    }
+@Table(name = "Reservation_drafts")
+public class ReservationDraft {
+    public ReservationDraft() {}
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -26,8 +29,10 @@ public class Reservation {
     @ManyToOne
     @JoinColumn(name = "id_user", nullable = false)
     private User user;
+
     @Column(name = "arrival", nullable = false)
     private LocalDate arrival;
+
     @Column(name = "departure", nullable = false)
     private LocalDate departure;
 
@@ -47,12 +52,19 @@ public class Reservation {
     @Column(name = "place_type", length = 25, nullable = false, unique = false)
     private PlaceType placeType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_type", length = 25, nullable = false, unique = false)
-    private PaymentType paymentType;
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", length = 25, nullable = false, unique = false)
-    private PaymentMethod paymentMethod;
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "cover_letter", length = 5000, nullable = true)
+    private String coverLetter;
+
+    public String getCoverLetter() { return coverLetter; }
+    public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
 
     @ManyToMany
     @JoinTable(
@@ -62,34 +74,12 @@ public class Reservation {
     )
     private Set<ServiceOption> serviceOptions = new HashSet<>();
 
-    @Column(name = "cover_letter", length = 5000, nullable = true)
-    private String coverLetter;
-
-    public String getCoverLetter() { return coverLetter; }
-    public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
-
-    public PaymentType getPaymentType() {
-        return paymentType;
-    }
-
-    public void setPaymentType(PaymentType paymentType) {
-        this.paymentType = paymentType;
-    }
-
     public PlaceType getPlaceType() {
         return placeType;
     }
 
     public void setPlaceType(PlaceType placeType) {
         this.placeType = placeType;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
     }
 
     public Integer getPetsAmount() {
@@ -163,4 +153,5 @@ public class Reservation {
     public void setServiceOptions(Set<ServiceOption> serviceOptions) {
         this.serviceOptions = serviceOptions != null ? serviceOptions : new HashSet<>();
     }
+
 }

@@ -2,6 +2,9 @@ package com.blps_lab1.demo.data.tables;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "Users")
 public class User {
@@ -10,11 +13,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(name = "login", length = 50, nullable = true, unique = true)
+    private String login;
+
     @Column(name = "name", length = 30, nullable = false, unique = false)
     private String name;
 
     @Column(name = "photo", nullable = true, unique = false)
     private String photo;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
 
     public long getId() {
         return id;
@@ -23,6 +32,10 @@ public class User {
     public void setId(long id) {
         this.id = id;
     }
+
+    public String getLogin() { return login; }
+
+    public void setLogin(String login) { this.login = login; }
 
     public String getName() {
         return name;

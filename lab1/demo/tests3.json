@@ -1,0 +1,257 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-30T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2025.1.0",
+  "resources": [
+    {
+      "_id": "wrk_blps_lab1",
+      "_type": "workspace",
+      "name": "BLPS Lab 1 - Booking & Security System",
+      "parentId": null
+    },
+    {
+      "_id": "env_global",
+      "_type": "environment",
+      "parentId": "wrk_blps_lab1",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "user_token": "",
+        "owner_token": "",
+        "admin_token": "",
+        "created_user_id": "",
+        "created_owner_id": "",
+        "created_place_id": "",
+        "created_draft_id": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "user_token", "owner_token", "admin_token", "created_user_id", "created_owner_id", "created_place_id", "created_draft_id"]
+      },
+      "color": null,
+      "isPrivate": false
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "1. Предварительная Аутентификация (JAAS XML)"
+    },
+    {
+      "_id": "req_auth_user",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - client_alex (User)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"client_alex\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": {},
+      "metaSortKey": -1000000
+    },
+    {
+      "_id": "req_auth_owner",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - owner_ivan (Owner)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"owner_ivan\",\n  \"password\": \"ownerpass\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": {},
+      "metaSortKey": -1500000
+    },
+    {
+      "_id": "fld_user_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "2. Сценарии Пользователя (User Profile)"
+    },
+    {
+      "_id": "req_create_user_profile",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Создание профиля User (В БД)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/user",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alexey Client Profile\",\n  \"login\": \"client_alex\",\n  \"photo\": null\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -2000000
+    },
+    {
+      "_id": "req_upload_user_photo",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Загрузка фото (Только на свой аккаунт)",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/user/{% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %}/photo",
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "name": "file",
+            "type": "file",
+            "fileName": "avatar.png",
+            "value": ""
+          }
+        ]
+      },
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -2500000
+    },
+    {
+      "_id": "req_get_places_by_town",
+      "_type": "request",
+      "parentId": "fld_user_scenarios",
+      "name": "Просмотр жилья по городу (Доступно всем)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/places/town/Moscow",
+      "body": {},
+      "headers": [],
+      "metaSortKey": -3000000
+    },
+    {
+      "_id": "fld_owner_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "3. Сценарии Владельца (Owner & Places)"
+    },
+    {
+      "_id": "req_create_owner_profile",
+      "_type": "request",
+      "parentId": "fld_owner_scenarios",
+      "name": "Создание профиля Владельца",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/owners",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Ivan Owner Profile\",\n  \"login\": \"owner_ivan\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": true\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -3500000
+    },
+    {
+      "_id": "req_create_own_place",
+      "_type": "request",
+      "parentId": "fld_owner_scenarios",
+      "name": "Создание собственного места",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/places",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Cozy Underground Studio\",\n  \"town\": \"Moscow\",\n  \"description\": \"Perfect for tech students\",\n  \"placeType\": \"APARTMENT\",\n  \"pricePerNight\": 1500.0,\n  \"maxGuests\": 2,\n  \"rating\": 5.0,\n  \"petsAllowed\": true,\n  \"ownerId\": {% response 'body', 'req_create_owner_profile', 'b64::JC5pZA==::46b', 'never', 60 %}\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4000000
+    },
+    {
+      "_id": "fld_draft_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "4. Сценарии Бронирования и Черновиков"
+    },
+    {
+      "_id": "req_create_draft",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Создание черновика (Доступно всем)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reservation/entity",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idPlace\": {% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"userId\": {% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"arrival\": \"2026-06-01\",\n  \"departure\": \"2026-06-10\",\n  \"guestsAmount\": 2,\n  \"petsAmount\": 0,\n  \"serviceOptionIds\": []\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4500000
+    },
+    {
+      "_id": "req_update_draft_dates",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Обновление дат черновика (Только создатель)",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/reservation/{% response 'body', 'req_create_draft', 'b64::JC5pZA==::46b', 'never', 60 %}/dates",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-06-03\",\n  \"departure\": \"2026-06-12\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5000000
+    },
+    {
+      "_id": "req_process_payment_confirm",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Оплата и перевод черновика в бронь",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payment/reservation/{% response 'body', 'req_create_draft', 'b64::JC5pZA==::46b', 'never', 60 %}/process",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"DELAYED\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5500000
+    },
+    {
+      "_id": "fld_cleanup_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "5. Сценарии Удаления (Тест деструктивных прав)"
+    },
+    {
+      "_id": "req_delete_place",
+      "_type": "request",
+      "parentId": "fld_cleanup_scenarios",
+      "name": "Удаление места (Владелец / Админ)",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/places/{% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -6000000
+    },
+    {
+      "_id": "req_delete_user_profile",
+      "_type": "request",
+      "parentId": "fld_cleanup_scenarios",
+      "name": "Удаление профиля пользователя (Сам юзер / Админ)",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/user/{% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -6500000
+    }
+  ]
+}

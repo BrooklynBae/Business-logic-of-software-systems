@@ -6,6 +6,7 @@ import com.blps_lab1.demo.dto.CreateServiceOptionRequest;
 import com.blps_lab1.demo.dto.ServiceOptionDto;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.services.api.IServiceOptionService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -20,16 +21,7 @@ public class ServiceOptionService implements IServiceOptionService {
     }
 
     @Override
-    public ServiceOptionDto create(CreateServiceOptionRequest request) {
-        ServiceOption serviceOption = new ServiceOption();
-        serviceOption.setName(request.getName());
-        serviceOption.setDescription(request.getDescription());
-        serviceOption.setPricePerDay(request.getPricePerDay());
-        serviceOption.setPetRelated(request.getPetRelated() != null && request.getPetRelated());
-        return toDto(serviceOptionRepository.save(serviceOption));
-    }
-
-    @Override
+    @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT')")
     public List<ServiceOptionDto> findAll() {
         return serviceOptionRepository.findAll().stream()
                 .map(this::toDto)
@@ -37,10 +29,12 @@ public class ServiceOptionService implements IServiceOptionService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public List<ServiceOption> findEntitiesByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
+
         List<ServiceOption> options = serviceOptionRepository.findAllById(ids);
         if (options.size() != ids.size()) {
             throw new BadRequestException("Some service options were not found");
@@ -54,7 +48,6 @@ public class ServiceOptionService implements IServiceOptionService {
                 .name(serviceOption.getName())
                 .description(serviceOption.getDescription())
                 .pricePerDay(serviceOption.getPricePerDay())
-                .petRelated(serviceOption.getPetRelated())
                 .build();
     }
 }

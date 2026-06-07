@@ -13,16 +13,19 @@ public class Owner {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(name = "login", length = 50, nullable = true, unique = true)
+    private String login;
+
     @Column(name = "name", length = 30, nullable = false, unique = false)
     private String name;
 
-    @Column(name = "requirenments_message", nullable = false, unique = false)
+    @Column(name = "requirements_message", nullable = false, unique = false)
     @ColumnDefault("False")
     private Boolean requirenmentsMessage;
 
-    @Column(name = "requirenments_photo", nullable = false, unique = false)
+    @Column(name = "requirements_photo", nullable = false, unique = false)
     @ColumnDefault("False")
-    private Boolean requirenmentsPhoto;
+    private Boolean requirementsPhoto;
 
     public long getId() {
         return id;
@@ -31,6 +34,10 @@ public class Owner {
     public void setId(long id) {
         this.id = id;
     }
+
+    public String getLogin() { return login; }
+
+    public void setLogin(String login) { this.login = login; }
 
     public String getName() {
         return name;
@@ -49,10 +56,10 @@ public class Owner {
     }
 
     public Boolean getRequirenmentsPhoto() {
-        return requirenmentsPhoto;
+        return requirementsPhoto;
     }
 
     public void setRequirenmentsPhoto(Boolean requirenmentsPhoto) {
-        this.requirenmentsPhoto = requirenmentsPhoto;
+        this.requirementsPhoto = requirenmentsPhoto;
     }
 }

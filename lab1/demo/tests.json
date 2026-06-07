@@ -1,0 +1,193 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-30T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_1",
+      "parentId": null,
+      "modified": 1717027200000,
+      "created": 1717027200000,
+      "name": "BLPS Lab 1 - Booking System",
+      "description": "Тестовая коллекция для проверки транзакционности, черновиков и процесса оплаты",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_1",
+      "parentId": "wrk_1",
+      "modified": 1717027200000,
+      "created": 1717027200000,
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8082"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_1",
+      "parentId": "wrk_1",
+      "name": "1. Инициализация данных (Низкоуровневый CRUD)",
+      "description": "Создание базовых сущностей для проведения тестов бронирования",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_1",
+      "parentId": "fld_1",
+      "name": "Создать Владельца (Owner)",
+      "url": "{{ baseUrl }}/owners",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Иван Васильевич\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": true\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_2",
+      "parentId": "fld_1",
+      "name": "Создать Пользователя (User)",
+      "url": "{{ baseUrl }}/user",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Алексей Клиент\",\n  \"photo\": \"avatar_url_string\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_3",
+      "parentId": "fld_1",
+      "name": "Создать Точку Проживания (Place)",
+      "url": "{{ baseUrl }}/places",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"town\": \"Санкт-Петербург\",\n  \"name\": \"Уютные Апартаменты у Невы\",\n  \"description\": \"Прекрасный вид, центр города\",\n  \"placeType\": \"APARTMENT\",\n  \"pricePerNight\": 4500.0,\n  \"maxGuests\": 4,\n  \"rating\": 4.8,\n  \"petsAllowed\": true,\n  \"ownerId\": 1\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "fld_2",
+      "parentId": "wrk_1",
+      "name": "2. Бизнес-процесс Бронирования (Сквозной)",
+      "description": "Сценарии работы с черновиками и транзакционной оплатой",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_4",
+      "parentId": "fld_2",
+      "name": "Шаг 2.1: Создать Черновик Брони (Create Draft) - Успех",
+      "url": "{{ baseUrl }}/reservation",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-06-01\",\n  \"departure\": \"2026-06-05\",\n  \"guestsAmount\": 2,\n  \"petsAmount\": 1,\n  \"userId\": 1,\n  \"idPlace\": 1,\n  \"serviceOptionIds\": []\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_5",
+      "parentId": "fld_2",
+      "name": "Шаг 2.2: Изменить даты черновика (Update Dates)",
+      "url": "{{ baseUrl }}/reservation/1/dates",
+      "method": "PATCH",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-06-02\",\n  \"departure\": \"2026-06-06\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_6",
+      "parentId": "fld_2",
+      "name": "Шаг 2.3: Провести оплату и финализировать (Process Payment) - NOW",
+      "url": "{{ baseUrl }}/payment/reservation/1/process",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"NOW\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "fld_3",
+      "parentId": "wrk_1",
+      "name": "3. Негативные тесты (Валидация бизнес-правил)",
+      "description": "Проверка корректной обработки ошибок (BadRequest / NotFound)",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_7",
+      "parentId": "fld_3",
+      "name": "Ошибка: Превышение лимита гостей (Max Guests Exceeded)",
+      "url": "{{ baseUrl }}/reservation",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-07-01\",\n  \"departure\": \"2026-07-05\",\n  \"guestsAmount\": 10,\n  \"petsAmount\": 0,\n  \"userId\": 1,\n  \"idPlace\": 1,\n  \"serviceOptionIds\": []\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_8",
+      "parentId": "fld_3",
+      "name": "Ошибка: Логическое противоречие дат (Arrival > Departure)",
+      "url": "{{ baseUrl }}/reservation",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"arrival\": \"2026-06-10\",\n  \"departure\": \"2026-06-05\",\n  \"guestsAmount\": 2,\n  \"petsAmount\": 0,\n  \"userId\": 1,\n  \"idPlace\": 1,\n  \"serviceOptionIds\": []\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_9",
+      "parentId": "fld_3",
+      "name": "Ошибка: Обработка несуществующего ресурса (404 Not Found)",
+      "url": "{{ baseUrl }}/places/9999",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "_type": "request"
+    }
+  ]
+}

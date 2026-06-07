@@ -10,7 +10,7 @@ public class ReservationDto {
         return new Builder();
     }
 
-    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, Place place, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner, List<Long> serviceOptionIds) {
+    public ReservationDto(Long id, LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, User user, Place place, double price, PaymentType paymentType, PaymentMethod paymentMethod, Owner owner, List<Long> serviceOptionIds, String coverLetter) {
         this.id = id;
         this.arrival = arrival;
         this.departure = departure;
@@ -23,6 +23,7 @@ public class ReservationDto {
         this.paymentMethod = paymentMethod;
         this.owner = owner;
         this.serviceOptionIds = serviceOptionIds;
+        this.coverLetter = coverLetter;
     }
 
     private Long id;
@@ -37,6 +38,7 @@ public class ReservationDto {
     private PaymentMethod paymentMethod;
     private Owner owner;
     private List<Long> serviceOptionIds;
+    private String coverLetter;
 
 
     public Long getId() {
@@ -135,6 +137,14 @@ public class ReservationDto {
         this.serviceOptionIds = serviceOptionIds;
     }
 
+    public String getCoverLetter() {
+        return coverLetter;
+    }
+
+    public void setCoverLetter(String coverLetter) {
+        this.coverLetter = coverLetter;
+    }
+
     public static class Builder {
         private Long id;
         private LocalDate arrival;
@@ -148,6 +158,7 @@ public class ReservationDto {
         private PaymentMethod paymentMethod;
         private Owner owner;
         private List<Long> serviceOptionIds;
+        private String coverLetter;
 
         public Builder id(Long id) {
             this.id = id;
@@ -209,6 +220,11 @@ public class ReservationDto {
             return this;
         }
 
+        public Builder coverLetter(String coverLetter) {
+            this.coverLetter = coverLetter;
+            return this;
+        }
+
         public ReservationDto build() {
             return new ReservationDto(
                     id,
@@ -222,7 +238,8 @@ public class ReservationDto {
                     paymentType,
                     paymentMethod,
                     owner,
-                    serviceOptionIds
+                    serviceOptionIds,
+                    coverLetter
             );
         }
     }

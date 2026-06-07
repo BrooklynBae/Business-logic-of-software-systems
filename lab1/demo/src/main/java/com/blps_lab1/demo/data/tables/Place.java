@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Table(name = "Places")
 public class Place {
@@ -19,7 +24,7 @@ public class Place {
     @Column(name = "name", length = 30, nullable = false, unique = false)
     private String name;
 
-    @Column(name = "description", length = 30, nullable = false, unique = false)
+    @Column(name = "description", length = 500, nullable = false, unique = false)
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -41,9 +46,31 @@ public class Place {
     @ColumnDefault("0")
     private double rating;
 
+    @OneToMany(mappedBy = "place", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "place", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<ReservationDraft> reservationDrafts = new ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "id_owner", nullable = false)
     private Owner owner;
+
+    @ManyToMany
+    @JoinTable(
+            name = "place_services",
+            joinColumns = @JoinColumn(name = "place_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_option_id")
+    )
+    private Set<ServiceOption> serviceOptions = new HashSet<>();
+
+    public Set<ServiceOption> getServiceOptions() {
+        return serviceOptions;
+    }
+
+    public void setServiceOptions(Set<ServiceOption> serviceOptions) {
+        this.serviceOptions = serviceOptions != null ? serviceOptions : new HashSet<>();
+    }
 
     public long getId() {
         return id;

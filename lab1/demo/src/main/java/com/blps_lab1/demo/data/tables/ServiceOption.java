@@ -6,9 +6,15 @@ import org.hibernate.annotations.ColumnDefault;
 @Entity
 @Table(name = "service_options")
 public class ServiceOption {
+
+    public ServiceOption() {}
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, unique = true, length = 100)
+    private ServiceType type;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -20,47 +26,18 @@ public class ServiceOption {
     @ColumnDefault("0")
     private double pricePerDay;
 
-    @Column(name = "pet_related", nullable = false)
-    @ColumnDefault("false")
-    private Boolean petRelated;
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public ServiceType getType() { return type; }
+    public void setType(ServiceType type) { this.type = type; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public double getPricePerDay() {
-        return pricePerDay;
-    }
-
-    public void setPricePerDay(double pricePerDay) {
-        this.pricePerDay = pricePerDay;
-    }
-
-    public Boolean getPetRelated() {
-        return petRelated;
-    }
-
-    public void setPetRelated(Boolean petRelated) {
-        this.petRelated = petRelated;
-    }
+    public double getPricePerDay() { return pricePerDay; }
+    public void setPricePerDay(double pricePerDay) { this.pricePerDay = pricePerDay; }
 }

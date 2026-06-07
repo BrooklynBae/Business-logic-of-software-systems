@@ -1,7 +1,9 @@
 package com.blps_lab1.demo.controller;
 
 import com.blps_lab1.demo.dto.*;
+import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,42 +11,48 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/reservation")
 public class ReservationController {
     private final IReservationService reservationService;
+    private final IReservationDraftService reservationDraftService;
 
-    public ReservationController(IReservationService reservationService) {
+    public ReservationController(IReservationService reservationService, IReservationDraftService reservationDraftService) {
         this.reservationService = reservationService;
+        this.reservationDraftService = reservationDraftService;
     }
-    //сначала create draft -> payment = null, потом confirm payment ->
-    //я возвращаю айди созданного черновика and price
-    @PostMapping
-    public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationRequest request) {
-        ReservationDto response = reservationService.createDraft(request);
+
+    @PostMapping("/entity")
+    public ResponseEntity<ReservationDto> createReservation(@Valid @RequestBody ReservationRequest request) {
+        ReservationDto response = reservationDraftService.createDraft(request);
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/dates")
     public ResponseEntity<ReservationDto> updateDate(
-            @PathVariable Long id,
-            @RequestBody DateRequest request
+            @PathVariable("id") Long id,
+            @Valid @RequestBody DateRequest request
     ) {
-        ReservationDto response = reservationService.updateDate(id, request);
+        ReservationDto response = reservationDraftService.updateDate(id, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReservationDto> getById(@PathVariable Long id) {
+    public ResponseEntity<ReservationDto> getById(@PathVariable("id") Long id) {
         ReservationDto response = reservationService.findReservation(id);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/entity")
-    public ResponseEntity<ReservationDto> createReservationEntity(@RequestBody CreateReservationEntityRequest request) {
-        ReservationDto response = reservationService.createReservationEntity(request);
-        return ResponseEntity.ok(response);
-    }
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         reservationService.deleteReservation(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/cover-letter")
+    public ResponseEntity<ReservationDto> updateCoverLetterByAdmin(
+            @PathVariable("id") Long id,
+            @RequestBody String newLetter
+    ) {
+        if (newLetter == null || newLetter.trim().isBlank()) {
+            throw new IllegalArgumentException("Cover letter text cannot be null or empty");
+        }
+        return ResponseEntity.ok(reservationService.updateCoverLetterByAdmin(id, newLetter));
     }
 }
