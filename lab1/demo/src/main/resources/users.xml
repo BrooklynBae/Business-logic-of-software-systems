@@ -1,18 +1,52 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <users-realm>
-
+                    
+    
+    
+    
     <user password="{noop}adminroot" username="admin_sergey">
-
+                                        
+        
+        
+        
         <role name="ROLE_ADMIN"/>
-
+                                        
+        
+        
+        
         <authority name="PERM_PROCESS_PAYMENT"/>
-
+                                        
+        
+        
+        
         <authority name="PERM_MANAGE_OWN_PLACES"/>
-
+                                        
+        
+        
+        
         <authority name="PERM_MANAGE_USERS"/>
-
+                                        
+        
+        
+        
         <authority name="PERM_MODERATE_DRAFTS"/>
-
+                                    
+    
+    
+    
     </user>
-
+        
+    
+    <user password="{noop}ownerpass" username="Artemd232@mail.ru">
+                
+        <role name="ROLE_OWNER"/>
+                
+        <authority name="PERM_MANAGE_OWN_PLACES"/>
+            
+    </user>
+    
+    <user password="{noop}password123" username="KaragodinaKs@yandex.ru">
+        <role name="ROLE_USER"/>
+        <authority name="PERM_PROCESS_PAYMENT"/>
+    </user>
 </users-realm>

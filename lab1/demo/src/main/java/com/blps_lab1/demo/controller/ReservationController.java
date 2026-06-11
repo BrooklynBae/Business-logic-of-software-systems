@@ -1,6 +1,7 @@
 package com.blps_lab1.demo.controller;
 
 import com.blps_lab1.demo.dto.*;
+import com.blps_lab1.demo.services.ReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import jakarta.validation.Valid;
@@ -54,5 +55,16 @@ public class ReservationController {
             throw new IllegalArgumentException("Cover letter text cannot be null or empty");
         }
         return ResponseEntity.ok(reservationService.updateCoverLetterByAdmin(id, newLetter));
+    }
+
+    @PatchMapping("/drafts/{id}/moderate")
+    public ResponseEntity<Void> moderateDraft(
+            @PathVariable("id") Long id,
+            @RequestParam("approved") boolean approved
+    ) {
+        if (reservationDraftService instanceof ReservationDraftService) {
+            ((ReservationDraftService) reservationDraftService).moderateByAdmin(id, approved);
+        }
+        return ResponseEntity.ok().build();
     }
 }
