@@ -67,4 +67,15 @@ public class ReservationController {
         }
         return ResponseEntity.ok().build();
     }
+
+    @PatchMapping("/drafts/{id}/owner-confirm")
+    public ResponseEntity<Void> ownerConfirmDraft(
+            @PathVariable("id") Long id,
+            @RequestParam("approved") boolean approved
+    ) {
+        if (reservationDraftService instanceof ReservationDraftService) {
+            ((ReservationDraftService) reservationDraftService).confirmByOwner(id, approved);
+        }
+        return ResponseEntity.ok().build();
+    }
 }

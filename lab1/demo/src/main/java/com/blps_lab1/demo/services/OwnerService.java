@@ -57,7 +57,7 @@ public class OwnerService implements IOwnerService {
                 request.getLogin(),
                 request.getPassword(),
                 List.of("ROLE_OWNER"),
-                List.of("PERM_MANAGE_OWN_PLACES")
+                List.of("PERM_MANAGE_OWN_PLACES", "PERM_CONFIRM_RESERVATIONS")
         );
 
         return toDto(saved);

@@ -112,6 +112,24 @@ public class ReservationDraftService implements IReservationDraftService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isPlaceOwner(#draftRepository.findById(#id).orElse(null)?.getPlace()?.getId(), authentication.name)")
+    public void confirmByOwner(Long id, boolean approved) {
+        ReservationDraft draft = findEntityById(id);
+        if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[APPROVED_BY_ADMIN]")) {
+            throw new BadRequestException("Draft must be approved by admin first");
+        }
+
+        String originalLetter = draft.getCoverLetter().replace("[APPROVED_BY_ADMIN] ", "");
+
+        if (approved) {
+            stompTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
+        } else {
+            draft.setCoverLetter("[REJECTED_BY_OWNER] " + originalLetter);
+            reservationDraftRepository.save(draft);
+        }
+    }
+
     @Override
     public ReservationDraft findEntityById(Long id) {
         return reservationDraftRepository.findById(id)
