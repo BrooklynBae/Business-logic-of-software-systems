@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import jakarta.jms.ConnectionFactory;
 
@@ -43,5 +44,12 @@ public class XaTransactionConfig {
         factory.setTransactionManager(transactionManager);
         factory.setSessionTransacted(true);
         return factory;
+    }
+
+    @Bean
+    public JmsTemplate jmsTemplate(ConnectionFactory jmsConnectionFactory) {
+        JmsTemplate template = new JmsTemplate(jmsConnectionFactory);
+        template.setSessionTransacted(true);
+        return template;
     }
 }

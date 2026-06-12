@@ -6,7 +6,7 @@ import com.blps_lab1.demo.dto.*;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.*;
-import com.blps_lab1.demo.services.utils.StompTaskProducer;
+import com.blps_lab1.demo.services.utils.JmsTaskProducer;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,20 +22,19 @@ public class ReservationDraftService implements IReservationDraftService {
     private final IUserService userService;
     private final IPlaceService placeService;
     private final IServiceOptionService serviceOptionService;
-    private final StompTaskProducer stompTaskProducer;
-
+    private final JmsTaskProducer jmsTaskProducer;
     public ReservationDraftService(ReservationDraftRepository reservationDraftRepository,
                                    IReservationService reservationService,
                                    IUserService userService,
                                    IPlaceService placeService,
                                    IServiceOptionService serviceOptionService,
-                                   StompTaskProducer stompTaskProducer) {
+                                    JmsTaskProducer jmsTaskProducer) {
         this.reservationDraftRepository = reservationDraftRepository;
         this.reservationService = reservationService;
         this.userService = userService;
         this.placeService = placeService;
         this.serviceOptionService = serviceOptionService;
-        this.stompTaskProducer = stompTaskProducer;
+        this.jmsTaskProducer = jmsTaskProducer;
     }
 
     @Override
@@ -81,7 +80,7 @@ public class ReservationDraftService implements IReservationDraftService {
         ReservationDraft saved = reservationDraftRepository.save(reservationDraft);
 
         if (place.getOwner() != null && Boolean.TRUE.equals(place.getOwner().getRequirenmentsMessage())) {
-            stompTaskProducer.sendToQueue("draft.moderation", new TaskMessage(saved.getId(), "MODERATE"));
+            jmsTaskProducer.sendToQueue("draft.moderation", new TaskMessage(saved.getId(), "MODERATE"));
         }
 
         return ReservationDto.builder()
@@ -105,7 +104,7 @@ public class ReservationDraftService implements IReservationDraftService {
         if (approved) {
             draft.setCoverLetter("[APPROVED_BY_ADMIN] " + originalLetter);
             reservationDraftRepository.save(draft);
-            stompTaskProducer.sendToQueue("mail.sending", new TaskMessage(draft.getId(), "SEND_EMAIL"));
+            jmsTaskProducer.sendToQueue("mail.sending", new TaskMessage(draft.getId(), "SEND_EMAIL"));
         } else {
             draft.setCoverLetter("[REJECTED] " + originalLetter);
             reservationDraftRepository.save(draft);
@@ -113,16 +112,18 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isDraftPlaceOwner(#id, authentication.name)")    public void confirmByOwner(Long id, boolean approved) {
+    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isDraftPlaceOwner(#a0, authentication.name)")
+    public void confirmByOwner(Long id, boolean approved) {
         ReservationDraft draft = findEntityById(id);
-        if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[APPROVED_BY_ADMIN]")) {
-            throw new BadRequestException("Draft must be approved by admin first");
+
+        if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[EMAIL_SENT_TO_OWNER]")) {
+            throw new BadRequestException("Draft is not in a state waiting for owner confirmation. Current state: " + draft.getCoverLetter());
         }
 
-        String originalLetter = draft.getCoverLetter().replace("[APPROVED_BY_ADMIN] ", "");
+        String originalLetter = draft.getCoverLetter().replace("[EMAIL_SENT_TO_OWNER] ", "");
 
         if (approved) {
-            stompTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
+            jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
         } else {
             draft.setCoverLetter("[REJECTED_BY_OWNER] " + originalLetter);
             reservationDraftRepository.save(draft);

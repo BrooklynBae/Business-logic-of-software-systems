@@ -62,9 +62,7 @@ public class ReservationController {
             @PathVariable("id") Long id,
             @RequestParam("approved") boolean approved
     ) {
-        if (reservationDraftService instanceof ReservationDraftService) {
-            ((ReservationDraftService) reservationDraftService).moderateByAdmin(id, approved);
-        }
+        reservationDraftService.moderateByAdmin(id, approved);
         return ResponseEntity.ok().build();
     }
 
@@ -73,9 +71,7 @@ public class ReservationController {
             @PathVariable("id") Long id,
             @RequestParam("approved") boolean approved
     ) {
-        if (reservationDraftService instanceof ReservationDraftService) {
-            ((ReservationDraftService) reservationDraftService).confirmByOwner(id, approved);
-        }
+        reservationDraftService.confirmByOwner(id, approved);
         return ResponseEntity.ok().build();
     }
 }

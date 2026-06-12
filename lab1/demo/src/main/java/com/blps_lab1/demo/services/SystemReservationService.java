@@ -5,7 +5,6 @@ import com.blps_lab1.demo.data.tables.ReservationDraft;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.ISystemReservationService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -18,15 +17,18 @@ public class SystemReservationService implements ISystemReservationService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public void markAsEmailSentBySystem(Long id) {
         ReservationDraft draft = reservationDraftRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Draft not found with id = " + id));
 
         if (draft.getCoverLetter() != null && draft.getCoverLetter().startsWith("[APPROVED_BY_ADMIN]")) {
             String originalLetter = draft.getCoverLetter().replace("[APPROVED_BY_ADMIN] ", "");
-            draft.setCoverLetter("[APPROVED_BY_OWNER] " + originalLetter);
+
+            draft.setCoverLetter("[EMAIL_SENT_TO_OWNER] " + originalLetter);
             reservationDraftRepository.save(draft);
+
+            System.out.println(">>> [JAS-SYSTEM] Статус черновика #" + id + " успешно переведен в [EMAIL_SENT_TO_OWNER]");
         }
     }
 }
