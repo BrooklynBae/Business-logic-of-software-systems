@@ -43,4 +43,14 @@ public class AppSecurityExpressions {
                 .map(place -> place.getOwner() != null && currentLogin.equals(place.getOwner().getLogin()))
                 .orElse(false);
     }
+
+    @Transactional(readOnly = true)
+    public boolean isDraftPlaceOwner(Long draftId, String currentLogin) {
+        if (draftId == null || currentLogin == null) return false;
+        return draftRepository.findById(draftId)
+                .map(draft -> draft.getPlace() != null &&
+                        draft.getPlace().getOwner() != null &&
+                        currentLogin.equals(draft.getPlace().getOwner().getLogin()))
+                .orElse(false);
+    }
 }

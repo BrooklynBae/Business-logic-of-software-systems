@@ -10,6 +10,7 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 
 @Component
@@ -32,14 +33,13 @@ public class MailSendingJmsListener {
     }
 
     @JmsListener(destination = "mail.sending", containerFactory = "jmsListenerContainerFactory")
+    @Transactional(rollbackFor = Exception.class)
     public void handleMailSending(byte[] payloadBytes) {
         try {
             String rawJson = new String(payloadBytes, StandardCharsets.UTF_8);
-            System.out.println(">>> [JMS TRACE] Входящее текстовое сообщение из очереди: " + rawJson);
+            System.out.println(">>> [XA JTA TRACE] Начало распределенной транзакции для сообщения: " + rawJson);
 
             TaskMessage task = objectMapper.readValue(rawJson, TaskMessage.class);
-            System.out.println(">>> [JMS] Поток успешно десериализовал задачу для ID: " + task.getDraftId());
-
             ReservationDraft draft = reservationDraftService.findEntityById(task.getDraftId());
             String ownerEmail = draft.getPlace().getOwner().getLogin();
             String userName = draft.getUser().getName();
@@ -57,14 +57,13 @@ public class MailSendingJmsListener {
                     "Сопроводительное письмо:\n\n" + rawLetter);
 
             mailSender.send(mailMessage);
-            System.out.println(">>> [JMS] Успешная физическая отправка почты на адрес через Яндекс: " + ownerEmail);
 
             systemReservationService.markAsEmailSentBySystem(task.getDraftId());
-            System.out.println(">>> [JMS] Статус успешно зафиксирован в БД через независимый транзакционный контекст");
+            System.out.println(">>> [XA JTA TRACE] Все XA-ресурсы готовы к коммиту (PostgreSQL + ActiveMQ)");
 
         } catch (Exception e) {
-            System.err.println(">>> КРИТИЧЕСКИЙ СБОЙ ВНУТРИ JMS ПОТОКА ОБРАБОТКИ!");
-            e.printStackTrace();
+            System.err.println(">>> [XA ROLLBACK] Сбой операции. Начинается откат всей распределенной транзакции!");
+            throw new RuntimeException("Forced XA Rollback due to internal error", e);
         }
     }
 }

@@ -37,11 +37,13 @@
     </user>
         
     
-    <user password="{noop}ownerpass" username="Artemd232@mail.ru">
+    <user password="{noop}ownerpass" username="shenheplscome@gmail.com">
                 
         <role name="ROLE_OWNER"/>
                 
         <authority name="PERM_MANAGE_OWN_PLACES"/>
+                
+        <authority name="PERM_CONFIRM_RESERVATIONS"/>
             
     </user>
     

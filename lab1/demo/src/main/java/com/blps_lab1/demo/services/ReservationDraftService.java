@@ -113,8 +113,7 @@ public class ReservationDraftService implements IReservationDraftService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isPlaceOwner(#draftRepository.findById(#id).orElse(null)?.getPlace()?.getId(), authentication.name)")
-    public void confirmByOwner(Long id, boolean approved) {
+    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isDraftPlaceOwner(#id, authentication.name)")    public void confirmByOwner(Long id, boolean approved) {
         ReservationDraft draft = findEntityById(id);
         if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[APPROVED_BY_ADMIN]")) {
             throw new BadRequestException("Draft must be approved by admin first");

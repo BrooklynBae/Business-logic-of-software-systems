@@ -1,43 +1,47 @@
 package com.blps_lab1.demo.config;
 
-import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.jms.client.ActiveMQXAConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.transaction.PlatformTransactionManager;
 import jakarta.jms.ConnectionFactory;
 
 @Configuration
-@EnableJms
-public class JmsConfig {
+public class XaTransactionConfig {
 
     @Value("${spring.artemis.broker-url}")
     private String brokerUrl;
 
     @Value("${spring.artemis.user}")
-    private String user;
+    private String artemisUser;
 
     @Value("${spring.artemis.password}")
-    private String password;
+    private String artemisPassword;
 
     @Bean
     public ConnectionFactory jmsConnectionFactory() {
         try {
-            ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory();
+            ActiveMQXAConnectionFactory factory = new ActiveMQXAConnectionFactory();
             factory.setBrokerURL(brokerUrl);
-            factory.setUser(user);
-            factory.setPassword(password);
+            factory.setUser(artemisUser);
+            factory.setPassword(artemisPassword);
             return factory;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create Artemis ConnectionFactory", e);
+            throw new RuntimeException("Failed to create Artemis XA ConnectionFactory", e);
         }
     }
 
     @Bean
-    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory jmsConnectionFactory) {
+    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(
+            ConnectionFactory jmsConnectionFactory,
+            PlatformTransactionManager transactionManager) {
+
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
         factory.setConnectionFactory(jmsConnectionFactory);
+        factory.setTransactionManager(transactionManager);
+        factory.setSessionTransacted(true);
         return factory;
     }
 }

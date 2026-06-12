@@ -22,24 +22,30 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// Database & JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.postgresql:postgresql:42.7.3'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+	// Object Storage
 	implementation 'io.minio:minio:8.6.0'
 
-	implementation 'org.jboss.narayana.jta:narayana-jta:6.0.0.Final'
+	// Modern Narayana JTA/XA Transaction Manager for Spring Boot 3.x / 4.x
+	implementation 'io.narayana.jcomponent:narayana-spring-boot-starter:3.0.0.Final'
 
+	// Security & JWT
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 
+	// Messaging & Broker (Artemis, Websocket, Pooled JMS)
 	implementation 'org.springframework.boot:spring-boot-starter-artemis'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.messaginghub:pooled-jms'
 
+	// Mail Service
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 

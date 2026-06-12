@@ -9,6 +9,7 @@ import com.blps_lab1.demo.services.api.IReservationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 
 @Component
@@ -25,10 +26,11 @@ public class ReservationConfirmationJmsListener {
     }
 
     @JmsListener(destination = "reservation.confirmation", containerFactory = "jmsListenerContainerFactory")
+    @Transactional(rollbackFor = Exception.class)
     public void handleConfirmation(byte[] payloadBytes) {
         try {
             String rawJson = new String(payloadBytes, StandardCharsets.UTF_8);
-            System.out.println(">>> [JMS CONFIRMATION] Получена задача подтверждения брони: " + rawJson);
+            System.out.println(">>> [XA JTA TRACE] Начало транзакции подтверждения брони: " + rawJson);
 
             TaskMessage task = objectMapper.readValue(rawJson, TaskMessage.class);
 
@@ -37,16 +39,14 @@ public class ReservationConfirmationJmsListener {
                 simulatedPayment.setPaymentType(PaymentType.LATER);
                 simulatedPayment.setPaymentMethod(PaymentMethod.CARD);
 
-                Long reservationId = reservationService.confirmReservation(task.getDraftId(), simulatedPayment);
-                System.out.println(">>> [JMS CONFIRMATION] Создана реальная бронь с ID: " + reservationId);
-
+                reservationService.confirmReservation(task.getDraftId(), simulatedPayment);
                 reservationDraftService.removeDraft(task.getDraftId());
-                System.out.println(">>> [JMS CONFIRMATION] Черновик ID " + task.getDraftId() + " успешно удален");
-            }
 
+                System.out.println(">>> [XA JTA TRACE] Успешное завершение 2PC коммита");
+            }
         } catch (Exception e) {
-            System.err.println(">>> КРИТИЧЕСКИЙ СБОЙ В JMS ПОТОКЕ ПОДТВЕРЖДЕНИЯ БРОНИ!");
-            e.printStackTrace();
+            System.err.println(">>> [XA ROLLBACK] Откат транзакции подтверждения брони!");
+            throw new RuntimeException("Forced XA Rollback for confirmation queue", e);
         }
     }
 }
