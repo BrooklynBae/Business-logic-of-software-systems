@@ -7,6 +7,13 @@ import com.blps_lab1.demo.dto.PaymentRequest;
 import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,11 +21,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
 import java.util.List;
 
 @Component
@@ -43,12 +54,10 @@ public class ReservationConfirmationJmsListener {
         Session jcrSession = null;
         try {
             String rawJson = new String(payloadBytes, StandardCharsets.UTF_8);
-            System.out.println(">>> [XA JTA TRACE] Начало распределенной транзакции (PostgreSQL + Jackrabbit КИС): " + rawJson);
+            System.out.println(">>> [XA JTA TRACE] Начало 2PC транзакции (PostgreSQL + PDF КИС): " + rawJson);
 
             UsernamePasswordAuthenticationToken systemAuth = new UsernamePasswordAuthenticationToken(
-                    "SYSTEM_ASYNC_WORKER",
-                    null,
-                    List.of(new SimpleGrantedAuthority("PERM_PROCESS_PAYMENT"))
+                    "SYSTEM_ASYNC_WORKER", null, List.of(new SimpleGrantedAuthority("PERM_PROCESS_PAYMENT"))
             );
             SecurityContextHolder.getContext().setAuthentication(systemAuth);
 
@@ -62,24 +71,73 @@ public class ReservationConfirmationJmsListener {
                 Long newReservationId = reservationService.confirmReservation(task.getDraftId(), simulatedPayment);
                 reservationDraftService.removeDraft(task.getDraftId());
 
-                jcrSession = jackrabbitRepository.login(new SimpleCredentials("admin", "admin".toCharArray()));
-                saveContractToJackrabbitEis(jcrSession, newReservationId, task.getDraftId());
+                byte[] pdfContractBytes = generatePdfContractBytes(newReservationId, task.getDraftId());
 
-                System.out.println(">>> [XA JTA TRACE] Обе системы отработали Phase 1 (Prepare). Координатор Narayana дает команду Commit.");
+                jcrSession = jackrabbitRepository.login(new SimpleCredentials("admin", "admin".toCharArray()));
+                savePdfToJackrabbitEis(jcrSession, newReservationId, pdfContractBytes);
+
+                System.out.println(">>> [XA JTA TRACE] Phase 2 (Commit) завершена. PDF-договор успешно сохранен в КИС.");
             }
         } catch (Exception e) {
-            System.err.println(">>> [XA ROLLBACK] Критическая ошибка! Откат изменений в СУБД PostgreSQL и КИС Jackrabbit.");
-            throw new RuntimeException("Forced XA Rollback due to failure in DB or EIS Repository", e);
+            System.err.println(">>> [XA ROLLBACK] Критический сбой. Откат СУБД и удаления PDF-файла.");
+            throw new RuntimeException("Forced XA Rollback due to failure in DB or PDF Generator", e);
         } finally {
             SecurityContextHolder.clearContext();
-
             if (jcrSession != null && jcrSession.isLive()) {
                 jcrSession.logout();
             }
         }
     }
 
-    private void saveContractToJackrabbitEis(Session session, Long reservationId, Long draftId) throws Exception {
+    private byte[] generatePdfContractBytes(Long reservationId, Long draftId) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document document = new Document();
+        PdfWriter.getInstance(document, baos);
+
+        document.open();
+
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
+        Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
+
+        Paragraph title = new Paragraph("OFFICIAL RENTAL AGREEMENT & CONTRACT", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        title.setSpacingAfter(20);
+        document.add(title);
+
+        document.add(new Paragraph("This legally binding document confirms the successful transaction and reservation activation inside the platform.", bodyFont));
+        document.add(new Paragraph("Generated automatically by the Distributed Enterprise Core System.\n\n", bodyFont));
+
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10);
+        table.setSpacingAfter(20);
+
+        table.addCell("Contract Attribute");
+        table.addCell("System Value");
+
+        table.addCell("Global Contract ID");
+        table.addCell("CON-ID-" + reservationId * 7);
+
+        table.addCell("Reservation Reference ID");
+        table.addCell(String.valueOf(reservationId));
+
+        table.addCell("Source System Draft ID");
+        table.addCell(String.valueOf(draftId));
+
+        table.addCell("Security Verification");
+        table.addCell("PASSED (JTA/2PC Aproved)");
+
+        document.add(table);
+
+        Paragraph footer = new Paragraph("Protected by global JTA 2PC mechanism. Corporate Archive EIS Ecosystem.", FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9));
+        footer.setAlignment(Element.ALIGN_RIGHT);
+        document.add(footer);
+
+        document.close();
+        return baos.toByteArray();
+    }
+
+    private void savePdfToJackrabbitEis(Session session, Long reservationId, byte[] pdfBytes) throws Exception {
         Node rootNode = session.getRootNode();
         Node archiveNode;
         if (rootNode.hasNode("corporate_contracts")) {
@@ -88,17 +146,19 @@ public class ReservationConfirmationJmsListener {
             archiveNode = rootNode.addNode("corporate_contracts", "nt:unstructured");
         }
 
-        String nodeName = "contract_" + reservationId;
-        Node contractNode = archiveNode.addNode(nodeName, "nt:unstructured");
+        String fileName = "contract_legal_" + reservationId + ".pdf";
 
-        contractNode.setProperty("reservationId", reservationId);
-        contractNode.setProperty("draftId", draftId);
-        contractNode.setProperty("documentType", "OFFICIAL_RENTAL_CONTRACT");
-        contractNode.setProperty("status", "PAID_VIA_HOLDING_ENGINE");
-        contractNode.setProperty("createdAt", java.util.Calendar.getInstance());
-        contractNode.setProperty("legalNotice", "Verified and protected by global JTA 2PC mechanism.");
+        Node fileNode = archiveNode.addNode(fileName, "nt:file");
+
+        Node contentNode = fileNode.addNode("jcr:content", "nt:resource");
+
+        Binary binary = session.getValueFactory().createBinary(new ByteArrayInputStream(pdfBytes));
+
+        contentNode.setProperty("jcr:data", binary);
+        contentNode.setProperty("jcr:mimeType", "application/pdf");
+        contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
 
         session.save();
-        System.out.println(">>> [JCA-JACKRABBIT-EIS] Контракт сформирован и буферизирован в КИС.");
+        System.out.println(">>> [JCA-JACKRABBIT-EIS] Настоящий PDF-файл '" + fileName + "' транзакционно передан в буфер КИС.");
     }
 }

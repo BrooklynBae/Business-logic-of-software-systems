@@ -30,7 +30,8 @@ dependencies {
 
 	implementation 'io.minio:minio:8.6.0'
 
-	implementation 'io.narayana.jcomponent:narayana-spring-boot-starter:3.0.0.Final'
+//	implementation 'io.narayana.jcomponent:narayana-spring-boot-starter:3.0.0.Final'
+	implementation 'org.jboss.narayana.jta:narayana-jta:6.0.0.Final'
 
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
@@ -47,6 +48,10 @@ dependencies {
 	implementation 'org.apache.jackrabbit:oak-core:1.68.0'
 
 	implementation 'javax.jcr:jcr:2.0'
+
+	implementation 'com.github.librepdf:openpdf:2.0.2'
+
+	implementation 'org.springframework.boot:spring-boot-starter-quartz'
 }
 
 tasks.named('test') {

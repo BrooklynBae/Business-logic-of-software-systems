@@ -141,6 +141,16 @@ public class ReservationDraftService implements IReservationDraftService {
         reservationDraftRepository.deleteById(id);
     }
 
-    @Override public ReservationDto updateDate(Long id, DateRequest r) { return null; }
-    @Override public void deleteExpiredDrafts() {}
+    @Override
+    public ReservationDto updateDate(Long id, DateRequest r) { return null; }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteExpiredDrafts() {
+        int minutesToLive = 30;
+        java.time.LocalDateTime expiryTime = java.time.LocalDateTime.now().minusMinutes(minutesToLive);
+
+        reservationDraftRepository.deleteByCreatedAtBefore(expiryTime);
+
+        System.out.println(">>> [QUARTZ-SERVICE] Очистка успешно завершена для черновиков, созданных до: " + expiryTime);
+    }
 }

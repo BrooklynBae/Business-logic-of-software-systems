@@ -55,7 +55,7 @@
       "url": "{{ _.baseUrl }}/owners",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"name\": \"Ivan Owner\",\n  \"login\": \"Artemd321@mail.ru\",\n  \"password\": \"ownerpass\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": false\n}"
+        "text": "{\n  \"name\": \"Ivan Owner\",\n  \"login\": \"shenheplscome@gmail.com\",\n  \"password\": \"ownerpass\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": false\n}"
       },
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
@@ -251,6 +251,19 @@
         { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
       ],
       "metaSortKey": -5100000
+    },
+    {
+      "_id": "req_get_pdf_contract_kis",
+      "_type": "request",
+      "parentId": "fld_payment_scenarios",
+      "name": "Проверка КИС: Просмотр сгенерированного PDF договора",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/reservation/contracts/11/pdf",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5200000
     }
   ]
 }
