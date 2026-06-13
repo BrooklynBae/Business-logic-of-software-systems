@@ -22,19 +22,36 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// Database & JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.postgresql:postgresql:42.7.3'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	implementation 'io.minio:minio:8.6.0'
 
+//	implementation 'io.narayana.jcomponent:narayana-spring-boot-starter:3.0.0.Final'
 	implementation 'org.jboss.narayana.jta:narayana-jta:6.0.0.Final'
 
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
+	implementation 'org.springframework.boot:spring-boot-starter-artemis'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.messaginghub:pooled-jms'
+
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	implementation 'org.apache.jackrabbit:oak-jcr:1.68.0'
+	implementation 'org.apache.jackrabbit:oak-core:1.68.0'
+
+	implementation 'javax.jcr:jcr:2.0'
+
+	implementation 'com.github.librepdf:openpdf:2.0.2'
+
+	implementation 'org.springframework.boot:spring-boot-starter-quartz'
 }
 
 tasks.named('test') {

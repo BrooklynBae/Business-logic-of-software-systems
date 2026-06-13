@@ -1,0 +1,213 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-06-11T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2025.1.0",
+  "resources": [
+    {
+      "_id": "wrk_blps_lab1",
+      "_type": "workspace",
+      "name": "BLPS Lab 2 - Distributed Architecture, ActiveMQ & Real Email Verification",
+      "parentId": null
+    },
+    {
+      "_id": "env_global",
+      "_type": "environment",
+      "parentId": "wrk_blps_lab1",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8082"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": null,
+      "isPrivate": false
+    },
+    {
+      "_id": "fld_registration",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "1. Регистрация Профилей"
+    },
+    {
+      "_id": "req_create_user_profile",
+      "_type": "request",
+      "parentId": "fld_registration",
+      "name": "Регистрация профиля User",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/user",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alexey Client\",\n  \"login\": \"KaragodinaKs@yandex.ru\",\n  \"password\": \"password123\",\n  \"photo\": \"avatar.png\",\n  \"roles\": [\"ROLE_USER\"],\n  \"authorities\": [\"PERM_PROCESS_PAYMENT\"]\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "metaSortKey": -1000000
+    },
+    {
+      "_id": "req_create_owner_profile",
+      "_type": "request",
+      "parentId": "fld_registration",
+      "name": "Регистрация профиля Владельца (requirementsMessage = true)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/owners",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Ivan Owner\",\n  \"login\": \"Artemd321@mail.ru\",\n  \"password\": \"ownerpass\",\n  \"requirenmentsMessage\": true,\n  \"requirenmentsPhoto\": false\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "metaSortKey": -2000000
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "2. Аутентификация"
+    },
+    {
+      "_id": "req_auth_user",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - User",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"client_alex\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1000000
+    },
+    {
+      "_id": "req_auth_owner",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - Owner",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"your_test_yandex_email@yandex.ru\",\n  \"password\": \"ownerpass\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1500000
+    },
+    {
+      "_id": "req_auth_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Логин - Admin",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin_sergey\",\n  \"password\": \"adminroot\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": -1800000
+    },
+    {
+      "_id": "fld_owner_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "3. Создание Места"
+    },
+    {
+      "_id": "req_create_own_place",
+      "_type": "request",
+      "parentId": "fld_owner_scenarios",
+      "name": "Создание жилья Владельцем",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/places",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Technical Enterprise Suite\",\n  \"town\": \"Moscow\",\n  \"description\": \"Distributed systems testing area\",\n  \"placeType\": \"FLAT\",\n  \"pricePerNight\": 2000.0,\n  \"maxGuests\": 2,\n  \"rating\": 5.0,\n  \"petsAllowed\": true,\n  \"ownerId\": {% response 'body', 'req_create_owner_profile', 'b64::JC5pZA==::46b', 'never', 60 %}\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_owner', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -3100000
+    },
+    {
+      "_id": "fld_draft_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "4. Черновики и Асинхронная Модерация"
+    },
+    {
+      "_id": "req_create_draft_success",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Создание черновика (Статус -> PENDING_ADMIN)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reservation/entity",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idPlace\": {% response 'body', 'req_create_own_place', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"userId\": {% response 'body', 'req_create_user_profile', 'b64::JC5pZA==::46b', 'never', 60 %},\n  \"arrival\": \"2026-08-01\",\n  \"departure\": \"2026-08-05\",\n  \"guestsAmount\": 1,\n  \"petsAmount\": 0,\n  \"serviceOptionIds\": [],\n  \"coverLetter\": \"I will be building reliable enterprise architectures inside the apartment.\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4100000
+    },
+    {
+      "_id": "req_payment_fail_before_moderation",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Попытка оплаты без модерации (Ожидается -> 400 Bad Request)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payment/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/process",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"NOW\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4200000
+    },
+    {
+      "_id": "req_admin_moderate_draft",
+      "_type": "request",
+      "parentId": "fld_draft_scenarios",
+      "name": "Одобрение черновика Админом (Спуск триггера отправки Email)",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/reservation/drafts/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/moderate?approved=true",
+      "body": {},
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -4300000
+    },
+    {
+      "_id": "fld_payment_scenarios",
+      "_type": "request_group",
+      "parentId": "wrk_blps_lab1",
+      "name": "5. Финал Процесса Оплаты"
+    },
+    {
+      "_id": "req_payment_success_final",
+      "_type": "request",
+      "parentId": "fld_payment_scenarios",
+      "name": "Оплата черновика после отправки письма (Успешно -> 200 OK)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payment/reservation/{% response 'body', 'req_create_draft_success', 'b64::JC5pZA==::46b', 'never', 60 %}/process",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paymentType\": \"NOW\",\n  \"paymentMethod\": \"CARD\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_auth_user', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+      ],
+      "metaSortKey": -5100000
+    }
+  ]
+}

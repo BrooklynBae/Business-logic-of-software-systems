@@ -2,28 +2,19 @@ package com.blps_lab1.demo.services;
 
 import com.blps_lab1.demo.data.repository.ReservationDraftRepository;
 import com.blps_lab1.demo.data.tables.*;
-import com.blps_lab1.demo.dto.DateRequest;
-import com.blps_lab1.demo.dto.ReservationDto;
-import com.blps_lab1.demo.dto.ReservationRequest;
+import com.blps_lab1.demo.dto.*;
 import com.blps_lab1.demo.exception.BadRequestException;
 import com.blps_lab1.demo.exception.NotFoundException;
 import com.blps_lab1.demo.services.api.*;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.access.prepost.PostAuthorize;
+import com.blps_lab1.demo.services.utils.JmsTaskProducer;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 @Service
-@EnableScheduling
 @Transactional
 public class ReservationDraftService implements IReservationDraftService {
     private final ReservationDraftRepository reservationDraftRepository;
@@ -31,44 +22,27 @@ public class ReservationDraftService implements IReservationDraftService {
     private final IUserService userService;
     private final IPlaceService placeService;
     private final IServiceOptionService serviceOptionService;
-
-    public ReservationDraftService(ReservationDraftRepository reservationDraftRepository, IReservationService reservationService, IUserService userService, IPlaceService placeService, IServiceOptionService serviceOptionService) {
+    private final JmsTaskProducer jmsTaskProducer;
+    public ReservationDraftService(ReservationDraftRepository reservationDraftRepository,
+                                   IReservationService reservationService,
+                                   IUserService userService,
+                                   IPlaceService placeService,
+                                   IServiceOptionService serviceOptionService,
+                                    JmsTaskProducer jmsTaskProducer) {
         this.reservationDraftRepository = reservationDraftRepository;
         this.reservationService = reservationService;
         this.userService = userService;
         this.placeService = placeService;
         this.serviceOptionService = serviceOptionService;
-    }
-
-    private ReservationDto toReservationDto(ReservationDraft reservation) {
-        return ReservationDto.builder()
-                .id(reservation.getId())
-                .arrival(reservation.getArrival())
-                .departure(reservation.getDeparture())
-                .guestsAmount(reservation.getGuestsAmount())
-                .petsAmount(reservation.getPetsAmount())
-                .user(reservation.getUser())
-                .place(reservation.getPlace())
-                .price(reservation.getPrice())
-                .owner(reservation.getPlace().getOwner())
-                .serviceOptionIds(reservation.getServiceOptions() != null ?
-                        reservation.getServiceOptions().stream().map(ServiceOption::getId).toList() :
-                        new ArrayList<>())
-                .build();
+        this.jmsTaskProducer = jmsTaskProducer;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("permitAll()")
     public ReservationDto createDraft(ReservationRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Reservation request body cannot be null");
-        }
-        if (request.getIdPlace() == null) {
-            throw new IllegalArgumentException("Place ID cannot be null");
-        }
-        if (request.getUserId() == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
+        if (request == null || request.getIdPlace() == null || request.getUserId() == null) {
+            throw new IllegalArgumentException("Required parameters cannot be null");
         }
         if (request.getArrival() == null || request.getDeparture() == null) {
             throw new BadRequestException("Arrival and departure dates must be specified");
@@ -79,24 +53,9 @@ public class ReservationDraftService implements IReservationDraftService {
 
         Place place = placeService.findEntityById(request.getIdPlace());
         User user = userService.findEntityById(request.getUserId());
-        Set<ServiceOption> selectedOptions = new HashSet<>(
-                serviceOptionService.findEntitiesByIds(request.getServiceOptionIds())
-        );
-
-        validateGuestsAndPets(place, request.getGuestsAmount(), request.getPetsAmount(), selectedOptions);
+        Set<ServiceOption> selectedOptions = new HashSet<>(serviceOptionService.findEntitiesByIds(request.getServiceOptionIds()));
 
         reservationService.ensureDatesAvailable(request.getIdPlace(), request.getArrival(), request.getDeparture());
-
-        validateOwnerRequirements(place, request.getCoverLetter());
-
-        double price = countPrice(
-                request.getArrival(),
-                request.getDeparture(),
-                request.getGuestsAmount(),
-                request.getPetsAmount(),
-                place,
-                selectedOptions
-        );
 
         ReservationDraft reservationDraft = new ReservationDraft();
         reservationDraft.setUser(user);
@@ -104,122 +63,94 @@ public class ReservationDraftService implements IReservationDraftService {
         reservationDraft.setArrival(request.getArrival());
         reservationDraft.setDeparture(request.getDeparture());
         reservationDraft.setGuestsAmount(request.getGuestsAmount());
-        reservationDraft.setPetsAmount(request.getPetsAmount());
-        reservationDraft.setPrice(price);
+        reservationDraft.setPetsAmount(request.getPetsAmount() != null ? request.getPetsAmount() : 0);
+        reservationDraft.setPrice(1000.0);
         reservationDraft.setPlaceType(place.getPlaceType());
         reservationDraft.setServiceOptions(selectedOptions);
-        reservationDraft.setCoverLetter(request.getCoverLetter());
 
-        reservationDraftRepository.save(reservationDraft);
+        if (place.getOwner() != null && Boolean.TRUE.equals(place.getOwner().getRequirenmentsMessage())) {
+            if (request.getCoverLetter() == null || request.getCoverLetter().trim().isBlank()) {
+                throw new BadRequestException("The owner of this place requires a cover letter for reservation.");
+            }
+            reservationDraft.setCoverLetter("[PENDING_ADMIN] " + request.getCoverLetter());
+        } else {
+            reservationDraft.setCoverLetter(request.getCoverLetter());
+        }
 
-        return toReservationDto(reservationDraft);
+        ReservationDraft saved = reservationDraftRepository.save(reservationDraft);
+
+        if (place.getOwner() != null && Boolean.TRUE.equals(place.getOwner().getRequirenmentsMessage())) {
+            jmsTaskProducer.sendToQueue("draft.moderation", new TaskMessage(saved.getId(), "MODERATE"));
+        }
+
+        return ReservationDto.builder()
+                .id(saved.getId())
+                .arrival(saved.getArrival())
+                .departure(saved.getDeparture())
+                .coverLetter(saved.getCoverLetter())
+                .build();
     }
 
-    @Override
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
-    public ReservationDto updateDate(Long id, DateRequest dateRequest) {
-        if (id == null) {
-            throw new IllegalArgumentException("Draft ID cannot be null");
-        }
-        if (dateRequest == null) {
-            throw new IllegalArgumentException("Date request body cannot be null");
-        }
-        if (dateRequest.getArrival() == null || dateRequest.getDeparture() == null) {
-            throw new BadRequestException("Arrival and departure dates must be specified");
+    @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS')")
+    public void moderateByAdmin(Long id, boolean approved) {
+        ReservationDraft draft = findEntityById(id);
+        if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[PENDING_ADMIN]")) {
+            throw new BadRequestException("Draft is not pending admin moderation");
         }
 
-        ReservationDraft reservationDraft = reservationDraftRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Draft not found or expired"));
+        String originalLetter = draft.getCoverLetter().replace("[PENDING_ADMIN] ", "");
 
-        reservationService.ensureDatesAvailable(reservationDraft.getPlace().getId(), dateRequest.getArrival(), dateRequest.getDeparture());
-
-        reservationDraft.setArrival(dateRequest.getArrival());
-        reservationDraft.setDeparture(dateRequest.getDeparture());
-
-        Set<ServiceOption> selectedOptions = new HashSet<>(reservationDraft.getServiceOptions());
-
-        double price = countPrice(
-                reservationDraft.getArrival(),
-                reservationDraft.getDeparture(),
-                reservationDraft.getGuestsAmount(),
-                reservationDraft.getPetsAmount(),
-                reservationDraft.getPlace(),
-                selectedOptions
-        );
-        reservationDraft.setPrice(price);
-
-        reservationDraftRepository.save(reservationDraft);
-
-        return toReservationDto(reservationDraft);
+        if (approved) {
+            draft.setCoverLetter("[APPROVED_BY_ADMIN] " + originalLetter);
+            reservationDraftRepository.save(draft);
+            jmsTaskProducer.sendToQueue("mail.sending", new TaskMessage(draft.getId(), "SEND_EMAIL"));
+        } else {
+            draft.setCoverLetter("[REJECTED] " + originalLetter);
+            reservationDraftRepository.save(draft);
+        }
     }
 
-    @Override
-    @Scheduled(cron = "0 */10 * * * *")
-    @Transactional
-    @PreAuthorize("permitAll()")
-    public void deleteExpiredDrafts() {
-        int minutesToLive = 30;
-        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(minutesToLive);
-        reservationDraftRepository.deleteByCreatedAtBefore(expiryTime);
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isDraftPlaceOwner(#a0, authentication.name)")
+    public void confirmByOwner(Long id, boolean approved) {
+        ReservationDraft draft = findEntityById(id);
+
+        if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[EMAIL_SENT_TO_OWNER]")) {
+            throw new BadRequestException("Draft is not in a state waiting for owner confirmation. Current state: " + draft.getCoverLetter());
+        }
+
+        String originalLetter = draft.getCoverLetter().replace("[EMAIL_SENT_TO_OWNER] ", "");
+
+        if (approved) {
+            jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
+        } else {
+            draft.setCoverLetter("[REJECTED_BY_OWNER] " + originalLetter);
+            reservationDraftRepository.save(draft);
+        }
     }
 
     @Override
     public ReservationDraft findEntityById(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Id cannot be null");
-        }
         return reservationDraftRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Draft not found or expired with id = " + id));
+                .orElseThrow(() -> new NotFoundException("Draft not found with id = " + id));
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    @PreAuthorize("@appSecurity.isDraftOwner(#a0, authentication.name) or hasAuthority('PERM_MODERATE_DRAFTS')")
     public void removeDraft(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Id cannot be null");
-        }
-        if (!reservationDraftRepository.existsById(id)) {
-            throw new NotFoundException("Draft not found with id = " + id);
-        }
         reservationDraftRepository.deleteById(id);
     }
 
-    private void validateOwnerRequirements(Place place, String coverLetter) {
-        if (place.getOwner() != null && Boolean.TRUE.equals(place.getOwner().getRequirenmentsMessage())) {
-            if (coverLetter == null || coverLetter.trim().isBlank()) {
-                throw new BadRequestException("The owner of this place requires a cover letter for reservation.");
-            }
-        }
-    }
+    @Override
+    public ReservationDto updateDate(Long id, DateRequest r) { return null; }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteExpiredDrafts() {
+        int minutesToLive = 30;
+        java.time.LocalDateTime expiryTime = java.time.LocalDateTime.now().minusMinutes(minutesToLive);
 
-    private void validateGuestsAndPets(Place place, Integer guestsAmount, Integer petsAmount, Set<ServiceOption> selectedOptions) {
-        if (guestsAmount > place.getMaxGuests()) {
-            throw new BadRequestException("This place can not accommodate " + guestsAmount + " guests. Limit - " + place.getMaxGuests());
-        }
-        int actualPetsAmount = (petsAmount != null) ? petsAmount : 0;
+        reservationDraftRepository.deleteByCreatedAtBefore(expiryTime);
 
-        if (actualPetsAmount > 0) {
-            if (Boolean.FALSE.equals(place.getPetsAllowed())) {
-                throw new BadRequestException("This place does not allow pets.");
-            }
-        }
-    }
-
-    private Double countPrice(LocalDate arrival, LocalDate departure, Integer guestsAmount, Integer petsAmount, Place place, Set<ServiceOption> selectedOptions) {
-        long totalDays = ChronoUnit.DAYS.between(arrival, departure);
-        if (totalDays <= 0) {
-            throw new BadRequestException("Departure date must be after arrival date");
-        }
-        double guestCoeff = 1 + (guestsAmount - 1) * 0.5;
-        double petsCoeff = 1 + (Math.max(0, petsAmount) * 0.1);
-        double accommodationTotalPrice = place.getPricePerNight() * totalDays * guestCoeff * petsCoeff;
-
-        double servicesTotalPrice = selectedOptions.stream()
-                .mapToDouble(ServiceOption::getPricePerDay)
-                .sum() * totalDays;
-
-        return accommodationTotalPrice + servicesTotalPrice;
+        System.out.println(">>> [QUARTZ-SERVICE] Очистка успешно завершена для черновиков, созданных до: " + expiryTime);
     }
 }

@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/reservation").permitAll()
                         .requestMatchers("/reservation/entity").permitAll()
                         .requestMatchers("/places/town/**", "/places/rating").permitAll()
+                        .requestMatchers("/reservation/contracts/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

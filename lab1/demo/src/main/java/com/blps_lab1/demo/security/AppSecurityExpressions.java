@@ -43,4 +43,20 @@ public class AppSecurityExpressions {
                 .map(place -> place.getOwner() != null && currentLogin.equals(place.getOwner().getLogin()))
                 .orElse(false);
     }
+
+    @Transactional(readOnly = true)
+    public boolean isDraftPlaceOwner(Long draftId, String currentLogin) {
+        if (draftId == null || currentLogin == null) return false;
+
+        return draftRepository.findById(draftId)
+                .map(draft -> {
+                    String ownerLogin = (draft.getPlace() != null && draft.getPlace().getOwner() != null)
+                            ? draft.getPlace().getOwner().getLogin() : "NULL";
+
+                    System.out.println(">>> [SECURITY DEBUG] Текущий юзер: " + currentLogin + " | Владелец жилья в черновике: " + ownerLogin);
+
+                    return currentLogin.equals(ownerLogin);
+                })
+                .orElse(false);
+    }
 }
