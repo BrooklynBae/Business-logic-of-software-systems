@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 16,
+  "id": "search-accommodation",
+  "type": "default",
+  "components": [
+    {"type": "textfield", "key": "town", "label": "City / location"},
+    {"type": "datetime", "key": "arrival", "label": "Arrival date", "subtype": "date"},
+    {"type": "datetime", "key": "departure", "label": "Departure date", "subtype": "date"},
+    {"type": "number", "key": "guestsAmount", "label": "Guests", "validate": {"required": true, "min": 1}},
+    {"type": "number", "key": "petsAmount", "label": "Pets", "validate": {"min": 0}},
+    {"type": "number", "key": "maxPrice", "label": "Maximum price"}
+  ]
+}

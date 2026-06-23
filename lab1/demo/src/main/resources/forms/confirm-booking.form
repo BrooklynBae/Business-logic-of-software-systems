@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 16,
+  "id": "confirm-booking",
+  "type": "default",
+  "components": [
+    {"type": "number", "key": "idPlace", "label": "Place ID", "validate": {"required": true, "min": 1}},
+    {"type": "datetime", "key": "arrival", "label": "Arrival date", "subtype": "date"},
+    {"type": "datetime", "key": "departure", "label": "Departure date", "subtype": "date"},
+    {"type": "number", "key": "totalPrice", "label": "Total price"},
+    {"type": "textarea", "key": "coverLetter", "label": "Cover letter"},
+    {"type": "checkbox", "key": "confirmedByUser", "label": "I confirm booking parameters"}
+  ]
+}

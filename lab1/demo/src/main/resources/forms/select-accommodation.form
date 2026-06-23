@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 16,
+  "id": "select-accommodation",
+  "type": "default",
+  "components": [
+    {"type": "number", "key": "selectedPlaceId", "label": "Selected place ID", "validate": {"required": true, "min": 1}},
+    {"type": "textfield", "key": "selectedPlaceName", "label": "Selected place name"}
+  ]
+}

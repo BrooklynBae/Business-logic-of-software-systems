@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 16,
+  "id": "cancel-booking",
+  "type": "default",
+  "components": [
+    {"type": "textarea", "key": "reason", "label": "Cancellation reason", "validate": {"required": true}}
+  ]
+}

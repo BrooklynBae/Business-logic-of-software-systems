@@ -1,0 +1,96 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-06-23T00:00:00.000Z",
+  "__export_source": "codex-lab4",
+  "resources": [
+    {
+      "_id": "wrk_lab4_camunda",
+      "_type": "workspace",
+      "name": "BLPS Lab 4 Camunda"
+    },
+    {
+      "_id": "env_lab4",
+      "_type": "environment",
+      "parentId": "wrk_lab4_camunda",
+      "name": "Base Environment",
+      "data": {
+        "appUrl": "http://127.0.0.1:8082",
+        "camundaUrl": "http://127.0.0.1:8080/engine-rest",
+        "token": "",
+        "taskId": "",
+        "processInstanceId": ""
+      }
+    },
+    {
+      "_id": "req_lab4_login",
+      "_type": "request",
+      "parentId": "wrk_lab4_camunda",
+      "name": "Login USER",
+      "method": "POST",
+      "url": "{{ _.appUrl }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"username\":\"KaragodinaKs@yandex.ru\",\"password\":\"password123\"}"
+      },
+      "headers": [{"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_lab4_start",
+      "_type": "request",
+      "parentId": "wrk_lab4_camunda",
+      "name": "Start BPM Reservation",
+      "method": "POST",
+      "url": "{{ _.appUrl }}/api/bpm/reservations/start",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"town\":\"Saint Petersburg\",\"arrival\":\"2026-07-01\",\"departure\":\"2026-07-05\",\"guestsAmount\":2,\"petsAmount\":0,\"userId\":1}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ]
+    },
+    {
+      "_id": "req_lab4_tasks",
+      "_type": "request",
+      "parentId": "wrk_lab4_camunda",
+      "name": "My BPM Tasks",
+      "method": "GET",
+      "url": "{{ _.appUrl }}/api/bpm/tasks/my",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_lab4_complete",
+      "_type": "request",
+      "parentId": "wrk_lab4_camunda",
+      "name": "Complete BPM Task",
+      "method": "POST",
+      "url": "{{ _.appUrl }}/api/bpm/tasks/{{ _.taskId }}/complete",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"town\":\"Saint Petersburg\",\"arrival\":\"2026-07-01\",\"departure\":\"2026-07-05\",\"guestsAmount\":2,\"petsAmount\":0,\"idPlace\":1,\"selectedPlaceId\":1,\"confirmedByUser\":true,\"coverLetter\":\"Lab 4 Camunda booking\"}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ]
+    },
+    {
+      "_id": "req_lab4_cancel",
+      "_type": "request",
+      "parentId": "wrk_lab4_camunda",
+      "name": "Cancel BPM Reservation",
+      "method": "POST",
+      "url": "{{ _.appUrl }}/api/bpm/reservations/{{ _.processInstanceId }}/cancel",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"reason\":\"Cancelled during Lab 4 test\"}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_AirbnbFastBookingLab4"
+                  targetNamespace="http://blps-lab4/camunda">
+  <bpmn:process id="airbnb-fast-booking" name="Airbnb Fast Booking Lab 4" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_BookingStarted" name="Start booking">
+      <bpmn:outgoing>Flow_Start_SearchForm</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="UserTask_SearchCriteria" name="Enter search criteria" camunda:candidateGroups="ROLE_USER" camunda:formRef="search-accommodation" camunda:formRefBinding="latest">
+      <bpmn:incoming>Flow_Start_SearchForm</bpmn:incoming>
+      <bpmn:outgoing>Flow_SearchForm_SearchService</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="ServiceTask_SearchAccommodations" name="Search accommodations" camunda:type="external" camunda:topic="search-accommodations">
+      <bpmn:incoming>Flow_SearchForm_SearchService</bpmn:incoming>
+      <bpmn:outgoing>Flow_SearchService_FoundGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_AccommodationFound" name="Accommodation found?">
+      <bpmn:incoming>Flow_SearchService_FoundGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Found_Select</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NotFound_End</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="UserTask_SelectAccommodation" name="Select accommodation" camunda:candidateGroups="ROLE_USER" camunda:formRef="select-accommodation" camunda:formRefBinding="latest">
+      <bpmn:incoming>Flow_Found_Select</bpmn:incoming>
+      <bpmn:outgoing>Flow_Select_CheckAvailability</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="ServiceTask_CheckAvailability" name="Check availability" camunda:type="external" camunda:topic="check-availability">
+      <bpmn:incoming>Flow_Select_CheckAvailability</bpmn:incoming>
+      <bpmn:outgoing>Flow_Check_AvailableGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Available" name="Accommodation available?">
+      <bpmn:incoming>Flow_Check_AvailableGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Available_Confirm</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Unavailable_End</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="UserTask_ConfirmBooking" name="Confirm booking parameters" camunda:candidateGroups="ROLE_USER" camunda:formRef="confirm-booking" camunda:formRefBinding="latest">
+      <bpmn:incoming>Flow_Available_Confirm</bpmn:incoming>
+      <bpmn:outgoing>Flow_Confirm_CreateDraft</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:boundaryEvent id="BoundaryEvent_DraftTimer" name="Draft expired" attachedToRef="UserTask_ConfirmBooking">
+      <bpmn:outgoing>Flow_Timer_CancelExpired</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT30M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:boundaryEvent id="BoundaryEvent_UserCancel" name="User cancelled" attachedToRef="UserTask_ConfirmBooking">
+      <bpmn:outgoing>Flow_Cancel_End</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Message_BookingCancelled"/>
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="ServiceTask_CreateDraft" name="Create reservation draft" camunda:type="external" camunda:topic="create-reservation-draft">
+      <bpmn:incoming>Flow_Confirm_CreateDraft</bpmn:incoming>
+      <bpmn:outgoing>Flow_CreateDraft_Eis</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="ServiceTask_CallEis" name="Call external EIS adapter" camunda:type="external" camunda:topic="call-eis-adapter">
+      <bpmn:incoming>Flow_CreateDraft_Eis</bpmn:incoming>
+      <bpmn:outgoing>Flow_Eis_SendMessage</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="ServiceTask_SendReservationMessage" name="Send reservation message" camunda:type="external" camunda:topic="send-reservation-message">
+      <bpmn:incoming>Flow_Eis_SendMessage</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendMessage_WaitAsync</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:intermediateCatchEvent id="CatchEvent_AsyncProcessed" name="Async processing result">
+      <bpmn:incoming>Flow_SendMessage_WaitAsync</bpmn:incoming>
+      <bpmn:outgoing>Flow_Async_Finalize</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Message_ReservationAsyncProcessed"/>
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:serviceTask id="ServiceTask_FinalizeBooking" name="Finalize booking" camunda:type="external" camunda:topic="finalize-booking">
+      <bpmn:incoming>Flow_Async_Finalize</bpmn:incoming>
+      <bpmn:outgoing>Flow_Finalize_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="ServiceTask_CancelExpiredDraft" name="Cancel expired draft" camunda:type="external" camunda:topic="cancel-expired-draft">
+      <bpmn:incoming>Flow_Timer_CancelExpired</bpmn:incoming>
+      <bpmn:outgoing>Flow_CancelExpired_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_Completed" name="Booking completed">
+      <bpmn:incoming>Flow_Finalize_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_NotFound" name="Accommodation not found">
+      <bpmn:incoming>Flow_NotFound_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Unavailable" name="Accommodation unavailable">
+      <bpmn:incoming>Flow_Unavailable_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Cancelled" name="Booking cancelled">
+      <bpmn:incoming>Flow_Cancel_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Expired" name="Draft expired">
+      <bpmn:incoming>Flow_CancelExpired_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_SearchForm" sourceRef="StartEvent_BookingStarted" targetRef="UserTask_SearchCriteria"/>
+    <bpmn:sequenceFlow id="Flow_SearchForm_SearchService" sourceRef="UserTask_SearchCriteria" targetRef="ServiceTask_SearchAccommodations"/>
+    <bpmn:sequenceFlow id="Flow_SearchService_FoundGateway" sourceRef="ServiceTask_SearchAccommodations" targetRef="Gateway_AccommodationFound"/>
+    <bpmn:sequenceFlow id="Flow_Found_Select" sourceRef="Gateway_AccommodationFound" targetRef="UserTask_SelectAccommodation">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${accommodationFound == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NotFound_End" sourceRef="Gateway_AccommodationFound" targetRef="EndEvent_NotFound">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${accommodationFound == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Select_CheckAvailability" sourceRef="UserTask_SelectAccommodation" targetRef="ServiceTask_CheckAvailability"/>
+    <bpmn:sequenceFlow id="Flow_Check_AvailableGateway" sourceRef="ServiceTask_CheckAvailability" targetRef="Gateway_Available"/>
+    <bpmn:sequenceFlow id="Flow_Available_Confirm" sourceRef="Gateway_Available" targetRef="UserTask_ConfirmBooking">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${available == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Unavailable_End" sourceRef="Gateway_Available" targetRef="EndEvent_Unavailable">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${available == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Available_Confirm_Default" sourceRef="Gateway_Available" targetRef="UserTask_ConfirmBooking"/>
+    <bpmn:sequenceFlow id="Flow_Confirm_CreateDraft" sourceRef="UserTask_ConfirmBooking" targetRef="ServiceTask_CreateDraft"/>
+    <bpmn:sequenceFlow id="Flow_Timer_CancelExpired" sourceRef="BoundaryEvent_DraftTimer" targetRef="ServiceTask_CancelExpiredDraft"/>
+    <bpmn:sequenceFlow id="Flow_Cancel_End" sourceRef="BoundaryEvent_UserCancel" targetRef="EndEvent_Cancelled"/>
+    <bpmn:sequenceFlow id="Flow_CreateDraft_Eis" sourceRef="ServiceTask_CreateDraft" targetRef="ServiceTask_CallEis"/>
+    <bpmn:sequenceFlow id="Flow_Eis_SendMessage" sourceRef="ServiceTask_CallEis" targetRef="ServiceTask_SendReservationMessage"/>
+    <bpmn:sequenceFlow id="Flow_SendMessage_WaitAsync" sourceRef="ServiceTask_SendReservationMessage" targetRef="CatchEvent_AsyncProcessed"/>
+    <bpmn:sequenceFlow id="Flow_Async_Finalize" sourceRef="CatchEvent_AsyncProcessed" targetRef="ServiceTask_FinalizeBooking"/>
+    <bpmn:sequenceFlow id="Flow_Finalize_End" sourceRef="ServiceTask_FinalizeBooking" targetRef="EndEvent_Completed"/>
+    <bpmn:sequenceFlow id="Flow_CancelExpired_End" sourceRef="ServiceTask_CancelExpiredDraft" targetRef="EndEvent_Expired"/>
+  </bpmn:process>
+
+  <bpmn:message id="Message_ReservationAsyncProcessed" name="reservation-async-processed"/>
+  <bpmn:message id="Message_BookingCancelled" name="booking-cancelled"/>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_AirbnbFastBookingLab4">
+    <bpmndi:BPMNPlane id="BPMNPlane_AirbnbFastBookingLab4" bpmnElement="airbnb-fast-booking">
+      <bpmndi:BPMNShape id="StartEvent_BookingStarted_di" bpmnElement="StartEvent_BookingStarted"><dc:Bounds x="160" y="160" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_SearchCriteria_di" bpmnElement="UserTask_SearchCriteria"><dc:Bounds x="240" y="138" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_SearchAccommodations_di" bpmnElement="ServiceTask_SearchAccommodations"><dc:Bounds x="410" y="138" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AccommodationFound_di" bpmnElement="Gateway_AccommodationFound" isMarkerVisible="true"><dc:Bounds x="590" y="153" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_SelectAccommodation_di" bpmnElement="UserTask_SelectAccommodation"><dc:Bounds x="690" y="138" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CheckAvailability_di" bpmnElement="ServiceTask_CheckAvailability"><dc:Bounds x="860" y="138" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Available_di" bpmnElement="Gateway_Available" isMarkerVisible="true"><dc:Bounds x="1040" y="153" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_ConfirmBooking_di" bpmnElement="UserTask_ConfirmBooking"><dc:Bounds x="1140" y="138" width="150" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CreateDraft_di" bpmnElement="ServiceTask_CreateDraft"><dc:Bounds x="1340" y="138" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CallEis_di" bpmnElement="ServiceTask_CallEis"><dc:Bounds x="1520" y="138" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_SendReservationMessage_di" bpmnElement="ServiceTask_SendReservationMessage"><dc:Bounds x="1700" y="138" width="150" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CatchEvent_AsyncProcessed_di" bpmnElement="CatchEvent_AsyncProcessed"><dc:Bounds x="1890" y="160" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_FinalizeBooking_di" bpmnElement="ServiceTask_FinalizeBooking"><dc:Bounds x="1970" y="138" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Completed_di" bpmnElement="EndEvent_Completed"><dc:Bounds x="2160" y="160" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_NotFound_di" bpmnElement="EndEvent_NotFound"><dc:Bounds x="597" y="300" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Unavailable_di" bpmnElement="EndEvent_Unavailable"><dc:Bounds x="1047" y="300" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_DraftTimer_di" bpmnElement="BoundaryEvent_DraftTimer"><dc:Bounds x="1195" y="200" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_UserCancel_di" bpmnElement="BoundaryEvent_UserCancel"><dc:Bounds x="1240" y="200" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CancelExpiredDraft_di" bpmnElement="ServiceTask_CancelExpiredDraft"><dc:Bounds x="1160" y="290" width="140" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Cancelled_di" bpmnElement="EndEvent_Cancelled"><dc:Bounds x="1350" y="300" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Expired_di" bpmnElement="EndEvent_Expired"><dc:Bounds x="1350" y="390" width="36" height="36"/></bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
