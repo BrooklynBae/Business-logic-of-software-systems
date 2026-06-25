@@ -4,6 +4,6 @@
   "type": "default",
   "components": [
     {"type": "textarea", "key": "cancelReason", "label": "Cancellation reason", "validate": {"required": true}},
-    {"type": "checkbox", "key": "bookingCanceled", "label": "Booking canceled", "defaultValue": true}
+    {"type": "checkbox", "key": "bookingCanceled", "label": "Booking canceled"}
   ]
 }

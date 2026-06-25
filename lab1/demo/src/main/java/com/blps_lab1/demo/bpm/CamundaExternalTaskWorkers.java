@@ -2,7 +2,11 @@ package com.blps_lab1.demo.bpm;
 
 import com.blps_lab1.demo.dto.ReservationRequest;
 import com.blps_lab1.demo.dto.TaskMessage;
+import com.blps_lab1.demo.dto.PaymentRequest;
+import com.blps_lab1.demo.data.tables.PaymentMethod;
+import com.blps_lab1.demo.data.tables.PaymentType;
 import com.blps_lab1.demo.services.api.IPlaceService;
+import com.blps_lab1.demo.services.api.IPaymentService;
 import com.blps_lab1.demo.services.api.IReservationDraftService;
 import com.blps_lab1.demo.services.api.IReservationService;
 import com.blps_lab1.demo.services.utils.JmsTaskProducer;
@@ -25,6 +29,7 @@ public class CamundaExternalTaskWorkers {
     private final IPlaceService placeService;
     private final IReservationService reservationService;
     private final IReservationDraftService reservationDraftService;
+    private final IPaymentService paymentService;
     private final JmsTaskProducer jmsTaskProducer;
     private final Repository jackrabbitRepository;
 
@@ -32,12 +37,14 @@ public class CamundaExternalTaskWorkers {
                                       IPlaceService placeService,
                                       IReservationService reservationService,
                                       IReservationDraftService reservationDraftService,
+                                      IPaymentService paymentService,
                                       JmsTaskProducer jmsTaskProducer,
                                       Repository jackrabbitRepository) {
         this.camundaRestClient = camundaRestClient;
         this.placeService = placeService;
         this.reservationService = reservationService;
         this.reservationDraftService = reservationDraftService;
+        this.paymentService = paymentService;
         this.jmsTaskProducer = jmsTaskProducer;
         this.jackrabbitRepository = jackrabbitRepository;
     }
@@ -47,9 +54,13 @@ public class CamundaExternalTaskWorkers {
         process(CamundaProcessConstants.TOPIC_SEARCH_ACCOMMODATIONS, this::searchAccommodations);
         process(CamundaProcessConstants.TOPIC_CHECK_AVAILABILITY, this::checkAvailability);
         process(CamundaProcessConstants.TOPIC_CREATE_RESERVATION_DRAFT, this::createReservationDraft);
+        process(CamundaProcessConstants.TOPIC_MODERATE_RESERVATION, this::moderateReservation);
+        process(CamundaProcessConstants.TOPIC_OWNER_CONFIRM_RESERVATION, this::ownerConfirmReservation);
+        process(CamundaProcessConstants.TOPIC_PROCESS_PAYMENT, this::processPayment);
         process(CamundaProcessConstants.TOPIC_SEND_RESERVATION_MESSAGE, this::sendReservationMessage);
         process(CamundaProcessConstants.TOPIC_CALL_EIS_ADAPTER, this::callEisAdapter);
         process(CamundaProcessConstants.TOPIC_FINALIZE_BOOKING, this::finalizeBooking);
+        process(CamundaProcessConstants.TOPIC_GENERATE_CONTRACT_REPORT, this::generateContractReport);
         process(CamundaProcessConstants.TOPIC_CANCEL_EXPIRED_DRAFT, this::cancelExpiredDrafts);
     }
 
@@ -111,8 +122,51 @@ public class CamundaExternalTaskWorkers {
     private Map<String, Object> sendReservationMessage(Map<String, Object> variables) {
         Long draftId = longValue(variables, "draftId");
         String processInstanceId = stringValue(variables, CamundaProcessConstants.VARIABLE_PROCESS_INSTANCE_ID);
-        jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draftId, "CREATE_RESERVATION", processInstanceId));
+        jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(
+                draftId,
+                "CREATE_RESERVATION",
+                processInstanceId,
+                stringValue(variables, "paymentType"),
+                stringValue(variables, "paymentMethod")
+        ));
         return Map.of("asyncMessageSent", true);
+    }
+
+    private Map<String, Object> moderateReservation(Map<String, Object> variables) {
+        Long draftId = longValue(variables, "draftId");
+        boolean adminApproved = booleanValue(variables, "adminApproved", false);
+        withSystemAuthentication("PERM_MODERATE_DRAFTS", () ->
+                reservationDraftService.moderateByAdminFromProcess(draftId, adminApproved));
+        return Map.of(
+                "adminModerationCompleted", true,
+                "adminApproved", adminApproved,
+                "draftRejected", !adminApproved
+        );
+    }
+
+    private Map<String, Object> ownerConfirmReservation(Map<String, Object> variables) {
+        Long draftId = longValue(variables, "draftId");
+        boolean ownerApproved = booleanValue(variables, "ownerApproved", false);
+        withSystemAuthentication("PERM_CONFIRM_RESERVATIONS", () ->
+                reservationDraftService.confirmByOwnerFromProcess(draftId, ownerApproved));
+        return Map.of(
+                "ownerConfirmationCompleted", true,
+                "ownerApproved", ownerApproved,
+                "draftRejected", !ownerApproved
+        );
+    }
+
+    private Map<String, Object> processPayment(Map<String, Object> variables) {
+        Long draftId = longValue(variables, "draftId");
+        PaymentRequest request = new PaymentRequest();
+        request.setPaymentType(PaymentType.valueOf(stringValue(variables, "paymentType")));
+        request.setPaymentMethod(PaymentMethod.valueOf(stringValue(variables, "paymentMethod")));
+        withSystemAuthentication("PERM_PROCESS_PAYMENT", () ->
+                paymentService.preparePaymentFromProcess(draftId, request));
+        return Map.of(
+                "paymentProcessed", true,
+                "paymentConfirmed", true
+        );
     }
 
     private Map<String, Object> callEisAdapter(Map<String, Object> variables) throws Exception {
@@ -130,6 +184,16 @@ public class CamundaExternalTaskWorkers {
 
     private Map<String, Object> finalizeBooking(Map<String, Object> variables) {
         return Map.of("finalizedBySpringWorker", true);
+    }
+
+    private Map<String, Object> generateContractReport(Map<String, Object> variables) {
+        Long reservationId = longValue(variables, "reservationId");
+        String contractPdfUrl = reservationId == null ? null : "/reservation/contracts/" + reservationId + "/pdf";
+        return Map.of(
+                "contractGenerated", reservationId != null,
+                "contractId", reservationId == null ? "" : "contract_legal_" + reservationId + ".pdf",
+                "contractPdfUrl", contractPdfUrl == null ? "" : contractPdfUrl
+        );
     }
 
     private Map<String, Object> cancelExpiredDrafts(Map<String, Object> variables) {
@@ -175,6 +239,14 @@ public class CamundaExternalTaskWorkers {
             return number.intValue();
         }
         return value == null || String.valueOf(value).isBlank() ? fallback : Integer.parseInt(String.valueOf(value));
+    }
+
+    private boolean booleanValue(Map<String, Object> variables, String key, boolean fallback) {
+        Object value = variables.get(key);
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        return value == null || String.valueOf(value).isBlank() ? fallback : Boolean.parseBoolean(String.valueOf(value));
     }
 
     private LocalDate dateValue(Map<String, Object> variables, String key) {

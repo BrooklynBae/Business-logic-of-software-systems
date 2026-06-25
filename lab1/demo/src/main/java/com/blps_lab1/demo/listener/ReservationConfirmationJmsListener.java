@@ -71,8 +71,12 @@ public class ReservationConfirmationJmsListener {
 
             if ("CREATE_RESERVATION".equals(task.getTaskType())) {
                 PaymentRequest simulatedPayment = new PaymentRequest();
-                simulatedPayment.setPaymentType(PaymentType.LATER);
-                simulatedPayment.setPaymentMethod(PaymentMethod.CARD);
+                simulatedPayment.setPaymentType(task.getPaymentType() == null || task.getPaymentType().isBlank()
+                        ? PaymentType.LATER
+                        : PaymentType.valueOf(task.getPaymentType()));
+                simulatedPayment.setPaymentMethod(task.getPaymentMethod() == null || task.getPaymentMethod().isBlank()
+                        ? PaymentMethod.CARD
+                        : PaymentMethod.valueOf(task.getPaymentMethod()));
 
                 Long newReservationId = reservationService.confirmReservation(task.getDraftId(), simulatedPayment);
                 reservationDraftService.removeDraft(task.getDraftId());

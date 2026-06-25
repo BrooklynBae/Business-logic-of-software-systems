@@ -27,6 +27,9 @@ class DemoApplicationTests {
                 "forms/search-accommodation.form",
                 "forms/select-accommodation.form",
                 "forms/confirm-booking.form",
+                "forms/admin-moderate-reservation.form",
+                "forms/owner-approve-booking.form",
+                "forms/payment.form",
                 "forms/cancel-booking.form"
         )) {
             assertNotNull(resource(form), form + " must be packaged");

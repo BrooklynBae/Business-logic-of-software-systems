@@ -94,6 +94,17 @@ public class ReservationDraftService implements IReservationDraftService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_MODERATE_DRAFTS')")
     public void moderateByAdmin(Long id, boolean approved) {
+        moderateByAdminInternal(id, approved);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
+    public void moderateByAdminFromProcess(Long id, boolean approved) {
+        moderateByAdminInternal(id, approved);
+    }
+
+    private void moderateByAdminInternal(Long id, boolean approved) {
         ReservationDraft draft = findEntityById(id);
         if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[PENDING_ADMIN]")) {
             throw new BadRequestException("Draft is not pending admin moderation");
@@ -114,6 +125,17 @@ public class ReservationDraftService implements IReservationDraftService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_CONFIRM_RESERVATIONS') and @appSecurity.isDraftPlaceOwner(#a0, authentication.name)")
     public void confirmByOwner(Long id, boolean approved) {
+        confirmByOwnerInternal(id, approved, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
+    public void confirmByOwnerFromProcess(Long id, boolean approved) {
+        confirmByOwnerInternal(id, approved, false);
+    }
+
+    private void confirmByOwnerInternal(Long id, boolean approved, boolean sendLegacyReservationMessage) {
         ReservationDraft draft = findEntityById(id);
 
         if (draft.getCoverLetter() == null || !draft.getCoverLetter().startsWith("[EMAIL_SENT_TO_OWNER]")) {
@@ -123,7 +145,11 @@ public class ReservationDraftService implements IReservationDraftService {
         String originalLetter = draft.getCoverLetter().replace("[EMAIL_SENT_TO_OWNER] ", "");
 
         if (approved) {
-            jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
+            draft.setCoverLetter("[APPROVED_BY_OWNER] " + originalLetter);
+            reservationDraftRepository.save(draft);
+            if (sendLegacyReservationMessage) {
+                jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draft.getId(), "CREATE_RESERVATION"));
+            }
         } else {
             draft.setCoverLetter("[REJECTED_BY_OWNER] " + originalLetter);
             reservationDraftRepository.save(draft);

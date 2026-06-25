@@ -14,5 +14,7 @@ public interface IReservationDraftService {
     void removeDraft(Long id);
     void moderateByAdmin(Long id, boolean approved);
     void confirmByOwner(Long id, boolean approved);
+    void moderateByAdminFromProcess(Long id, boolean approved);
+    void confirmByOwnerFromProcess(Long id, boolean approved);
 
 }

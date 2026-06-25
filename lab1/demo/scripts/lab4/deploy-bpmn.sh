@@ -14,4 +14,7 @@ curl -f -X POST "${CAMUNDA_URL}/deployment/create" \
   -F "search-accommodation.form=@${FORMS_DIR}/search-accommodation.form" \
   -F "select-accommodation.form=@${FORMS_DIR}/select-accommodation.form" \
   -F "confirm-booking.form=@${FORMS_DIR}/confirm-booking.form" \
+  -F "admin-moderate-reservation.form=@${FORMS_DIR}/admin-moderate-reservation.form" \
+  -F "owner-approve-booking.form=@${FORMS_DIR}/owner-approve-booking.form" \
+  -F "payment.form=@${FORMS_DIR}/payment.form" \
   -F "cancel-booking.form=@${FORMS_DIR}/cancel-booking.form"

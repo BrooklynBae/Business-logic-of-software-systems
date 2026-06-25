@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 16,
+  "id": "owner-approve-booking",
+  "type": "default",
+  "components": [
+    {
+      "type": "checkbox",
+      "key": "ownerApproved",
+      "label": "Approve booking",
+      "description": "Checked means the owner approves the reservation request.",
+      "validate": {"required": true}
+    },
+    {
+      "type": "textarea",
+      "key": "ownerComment",
+      "label": "Owner comment",
+      "description": "Optional owner comment."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 16,
+  "id": "payment",
+  "type": "default",
+  "components": [
+    {
+      "type": "select",
+      "key": "paymentType",
+      "label": "Payment type",
+      "description": "Choose one of the enum values supported by the backend.",
+      "values": [
+        {"label": "NOW", "value": "NOW"},
+        {"label": "LATER", "value": "LATER"}
+      ],
+      "validate": {"required": true}
+    },
+    {
+      "type": "select",
+      "key": "paymentMethod",
+      "label": "Payment method",
+      "description": "Choose one of the enum values supported by the backend.",
+      "values": [
+        {"label": "CARD", "value": "CARD"},
+        {"label": "CRYPTO", "value": "CRYPTO"}
+      ],
+      "validate": {"required": true}
+    },
+    {
+      "type": "checkbox",
+      "key": "paymentConfirmed",
+      "label": "Confirm payment",
+      "description": "Checked means the user confirms payment in Tasklist.",
+      "validate": {"required": true}
+    }
+  ]
+}

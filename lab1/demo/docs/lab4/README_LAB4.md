@@ -1,149 +1,136 @@
-# Lab 4: Camunda Standalone BPMS
+# Лабораторная 4: Camunda standalone BPMS
 
-## Architecture
+## Кратко
 
-Camunda Platform 7 is used as a standalone BPMS service. The Spring/WildFly application does not embed the engine. It connects to Camunda through REST and works as an external task adapter for database services, transactions, JMS and EIS.
+Пользовательский сценарий защиты больше не проходит через Insomnia. Пользователь запускает и выполняет процесс в Camunda Tasklist, а Camunda Cockpit используется для показа BPMN, токена процесса, incidents и history.
 
-Main process:
+Spring Boot/WildFly backend остаётся набором адаптеров и доменных сервисов:
 
-- BPMN: `src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
+- JPA/Narayana transactions;
+- Spring Security/JWT/JAAS;
+- reservation draft и reservation services;
+- Artemis/JMS;
+- Jackrabbit/JCR PDF-договор;
+- Quartz cleanup.
+
+Camunda Engine запущен отдельно как standalone-сервис.
+
+## BPMN
+
+- файл: `src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
 - process key: `airbnb-fast-booking`
 - process name: `Airbnb Fast Booking Lab 4`
-- startable from Camunda Tasklist: yes
+- `camunda:isStartableInTasklist="true"`
+- `camunda:historyTimeToLive="180"`
 
-Camunda Forms:
+## Forms
 
-- `src/main/resources/forms/start-booking.form`
-- `src/main/resources/forms/search-accommodation.form`
-- `src/main/resources/forms/select-accommodation.form`
-- `src/main/resources/forms/confirm-booking.form`
-- `src/main/resources/forms/cancel-booking.form`
+- `start-booking.form`
+- `search-accommodation.form`
+- `select-accommodation.form`
+- `confirm-booking.form`
+- `admin-moderate-reservation.form`
+- `owner-approve-booking.form`
+- `payment.form`
+- `cancel-booking.form`
 
-## What Runs In Camunda
+Формы не содержат demo default values. Значения вводятся вручную на защите.
 
-Camunda owns the dynamic route of the business process: start form, user tasks, gateways, timers, message wait state, external service tasks, incidents and history.
+## Роли в Tasklist
 
-User tasks are completed in Camunda Tasklist through Camunda Forms. The demo user does not call the application REST API by hand to start the process or complete user tasks.
+- USER tasks: `camunda:candidateGroups="ROLE_USER"`
+- OWNER tasks: `camunda:candidateGroups="ROLE_OWNER"`
+- ADMIN tasks: `camunda:candidateGroups="ROLE_ADMIN"`
 
-## What Runs In Spring
+В Camunda standalone нужно создать пользователей и добавить их в эти группы либо использовать demo-пользователя, которому добавлены все нужные группы.
 
-Spring keeps the existing backend responsibilities:
+## Подготовка demo data
 
-- JPA/service-layer transactions and Narayana/JTA boundaries;
-- Spring Security and method-level authorities;
-- reservation draft creation and final reservation creation;
-- Artemis/JMS producer/listener;
-- Jackrabbit/JCR EIS integration;
-- Quartz/Spring scheduled cleanup.
+Профили и жильё можно подготовить старым REST/seed способом. Это не основной BPM-сценарий, а подготовка данных.
 
-Camunda service tasks are external tasks. The Spring worker polls these topics:
+Нужны:
 
-- `search-accommodations`
-- `check-availability`
-- `create-reservation-draft`
-- `send-reservation-message`
-- `call-eis-adapter`
-- `finalize-booking`
-- `cancel-expired-draft`
+- USER с фото, иначе `PaymentService` запретит оплату;
+- OWNER с `requirenmentsMessage=true`, чтобы включить admin moderation и owner approval;
+- ADMIN с `PERM_MODERATE_DRAFTS`;
+- Place, созданный владельцем.
 
-## JMS And Message Correlation
+ID можно получить из БД:
 
-The BPMN process waits for message `reservation-async-processed` after the `send-reservation-message` external task.
+```sql
+select id, login, name, photo from users order by id;
+select id, login, name from owners order by id;
+select id, town, name, id_owner from places order by id;
+```
 
-The Spring worker sends a JMS payload to `reservation.confirmation` with:
+## Сценарий защиты через Camunda Tasklist и Cockpit
 
-- `draftId`
-- `taskType = CREATE_RESERVATION`
-- `processInstanceId`
-
-After the JMS listener creates the final reservation and stores the PDF contract in Jackrabbit, it calls Camunda REST `/message` itself. It correlates `reservation-async-processed` to the original `processInstanceId` and passes:
-
-- `asyncProcessingOk = true`
-- `reservationCreated = true`
-- `reservationId = <created reservation id>`
-
-Because of this, no manual Insomnia request to `/engine-rest/message` is needed.
-
-## Roles
-
-Spring business access is still enforced by Spring Security authorities.
-
-Camunda Tasklist assignment is separate from Spring Security. The BPMN user tasks use candidate group `ROLE_USER`. For the demo, create or use a Camunda user that belongs to `ROLE_USER`, or adjust the Camunda demo user/group mapping on the standalone engine.
-
-Recommended Camunda demo identities:
-
-- user `user`, group `ROLE_USER`
-- user `owner`, group `ROLE_OWNER`
-- user `admin`, group `ROLE_ADMIN`
-
-Only `ROLE_USER` is required for the current fast-booking path.
-
-## Local Startup
-
-Start infrastructure and Camunda standalone, then deploy the BPMN and forms:
+1. Запустить Camunda standalone.
+2. Задеплоить BPMN и forms:
 
 ```bash
 CAMUNDA_URL=http://127.0.0.1:8080/engine-rest scripts/lab4/deploy-bpmn.sh
 ```
 
-Run the backend locally:
+3. Запустить Spring Boot backend или WAR на WildFly/helios.
+4. Открыть Camunda Tasklist.
+5. Нажать `Start process`.
+6. Выбрать `Airbnb Fast Booking Lab 4`.
+7. Заполнить Start Form:
+   - `town`
+   - `arrival` в формате `YYYY-MM-DD`
+   - `departure` в формате `YYYY-MM-DD`
+   - `guestsAmount`
+   - `petsAmount`
+   - `userId`
+   - `coverLetter`
+8. Нажать `Start`.
+9. Открыть задачу `[USER] Enter search criteria`.
+10. Нажать `Claim`.
+11. Проверить или поправить поля поиска.
+12. Нажать `Complete`.
+13. Перейти в Cockpit.
+14. Открыть `Processes -> Airbnb Fast Booking Lab 4`.
+15. Открыть именно running process instance, а не только process definition.
+16. Показать, где стоит токен на BPMN.
+17. Вернуться в Tasklist.
+18. Выполнить `[USER] Select accommodation`, указать `idPlace`.
+19. Выполнить `[USER] Confirm booking request`, поставить `bookingConfirmed=true`.
+20. Дождаться service task `create-reservation-draft`.
+21. Выполнить `[ADMIN] Moderate reservation message`, поставить `adminApproved=true`.
+22. Дождаться `moderate-reservation`. Он вызывает существующую модерацию и отправляет JMS `mail.sending`.
+23. Выполнить `[OWNER] Approve booking`, поставить `ownerApproved=true`.
+24. Дождаться `owner-confirm-reservation`. Draft перейдёт в `[APPROVED_BY_OWNER]`.
+25. Выполнить `[USER] Pay reservation`:
+   - `paymentConfirmed=true`
+   - `paymentType=NOW` или `LATER`
+   - `paymentMethod=CARD` или `CRYPTO`
+26. Показать, что дальше процесс уходит в service tasks и JMS.
+27. Показать ожидание message `reservation-async-processed`.
+28. После JMS listener процесс сам продолжится.
+29. В Cockpit показать `Booking completed`.
+30. В History показать completed process instance и заполненный `endTime`.
+31. В Incidents показать отсутствие ошибок.
+32. Показать PDF:
+
+```text
+/reservation/contracts/{reservationId}/pdf
+```
+
+`reservationId` также сохраняется в process variable после JMS.
+
+## Что говорить преподавателю
+
+Camunda управляет динамическим бизнес-процессом. Human tasks выполняются через Tasklist и Camunda Forms. Service tasks не показываются в Tasklist, потому что их выполняет Spring external task worker.
+
+Spring Boot не заменён Camunda. Он остаётся доменным backend: транзакции, БД, security, JMS, Quartz и EIS выполняются в Spring. Camunda задаёт маршрут и состояние процесса.
+
+JMS не переносится внутрь Camunda. Интеграция сделана через adapter/API: Spring worker отправляет сообщение в Artemis, listener выполняет обработку и коррелирует Camunda message `reservation-async-processed`.
+
+## Сборка
 
 ```bash
-./gradlew bootRun --args='--spring.profiles.active=local,camunda'
+./gradlew.bat clean build
 ```
 
-Build the deployable WAR:
-
-```bash
-./gradlew clean build
-```
-
-WildFly/helios deployment notes are in `docs/lab4/DEPLOY_WILDFLY_HELIOS.md`.
-
-## Demo Data
-
-The Camunda forms require real database IDs:
-
-- `userId`: ID of an existing user;
-- `idPlace`: ID of an existing place.
-
-Do not guess these values. Use one of the existing seed flows or query PostgreSQL:
-
-```sql
-select id, username from users order by id;
-select id, town, name from places order by id;
-```
-
-Use the returned IDs in Tasklist forms.
-
-## How To Defend Through Camunda Forms
-
-1. Start Camunda standalone.
-2. Deploy BPMN and forms with `scripts/lab4/deploy-bpmn.sh`.
-3. Deploy or start the Spring backend on WildFly/helios.
-4. Open Camunda Tasklist.
-5. Start process `Airbnb Fast Booking Lab 4`.
-6. Fill the Start Form:
-   - `town = Moscow`
-   - `arrival = 2026-08-01`
-   - `departure = 2026-08-05`
-   - `guestsAmount = 1`
-   - `petsAmount = 0`
-   - `userId = <existing DB user id>`
-   - `coverLetter = Lab4 Camunda Forms test`
-7. Complete `Enter search criteria` if you need to adjust the same search values.
-8. Complete `Select accommodation`:
-   - `idPlace = <existing DB place id>`
-9. Complete `Confirm booking`:
-   - `bookingConfirmed = true`
-   - leave `cancelReason` empty
-10. Open Cockpit and watch the token move through external tasks.
-11. Wait for the JMS async step to finish automatically.
-12. In Cockpit History, show that the process instance is completed and `endTime` is set.
-13. In Cockpit Incidents, show that there are no incidents.
-
-Debug REST endpoints under `/api/bpm/**` may remain for diagnostics, but they are not the user interface for the defended scenario.
-
-Defense phrase:
-
-> Пользовательский интерфейс реализован через Camunda Tasklist и Camunda Forms. Пользователь не вызывает REST API приложения вручную: он запускает процесс и выполняет User Task через формы. Camunda Engine управляет маршрутом BPMN-процесса. Spring backend используется как набор адаптеров для автоматических service tasks: он через external task worker выполняет операции с БД, транзакционные сервисы, JMS и EIS. JMS-интеграция не переносится внутрь Camunda напрямую, а подключается через adapter/API, как разрешено в ТЗ.
+WAR собирается для WildFly/helios.

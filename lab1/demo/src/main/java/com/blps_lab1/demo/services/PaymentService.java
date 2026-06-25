@@ -25,6 +25,33 @@ public class PaymentService implements IPaymentService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthorize("hasAuthority('PERM_PROCESS_PAYMENT') and @appSecurity.isDraftOwner(#a0, authentication.name)")
     public PaymentResponseDto processPayment(Long id, PaymentRequest request) {
+        validatePaymentAllowed(id, request);
+
+        Long reservationId = reservationService.confirmReservation(id, request);
+        reservationDraftService.removeDraft(id);
+
+        return PaymentResponseDto.builder()
+                .reservationId(reservationId)
+                .available(true)
+                .success(true)
+                .message("Payment processed, reservation activated")
+                .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthorize("permitAll()")
+    public PaymentResponseDto preparePaymentFromProcess(Long id, PaymentRequest request) {
+        validatePaymentAllowed(id, request);
+        return PaymentResponseDto.builder()
+                .reservationId(null)
+                .available(true)
+                .success(true)
+                .message("Payment accepted by Camunda process; reservation will be finalized asynchronously")
+                .build();
+    }
+
+    private void validatePaymentAllowed(Long id, PaymentRequest request) {
         if (id == null || request == null) {
             throw new IllegalArgumentException("Arguments cannot be null");
         }
@@ -49,23 +76,22 @@ public class PaymentService implements IPaymentService {
             if (letter.startsWith("[APPROVED_BY_ADMIN]")) {
                 throw new BadRequestException("Payment failed: Administration approved, but the email is currently being sent to the owner.");
             }
+            if (letter.startsWith("[EMAIL_SENT_TO_OWNER]")) {
+                throw new BadRequestException("Payment failed: Owner has not confirmed the reservation yet.");
+            }
             if (letter.startsWith("[REJECTED]")) {
                 throw new BadRequestException("Payment failed: Your application was rejected.");
+            }
+            if (letter.startsWith("[REJECTED_BY_OWNER]")) {
+                throw new BadRequestException("Payment failed: Owner rejected the reservation.");
+            }
+            if (!letter.startsWith("[APPROVED_BY_OWNER]")) {
+                throw new BadRequestException("Payment failed: Reservation is not approved by owner.");
             }
         }
 
         if (request.getPaymentType() == null || request.getPaymentMethod() == null) {
             throw new BadRequestException("Payment data must be set before processing payment");
         }
-
-        Long reservationId = reservationService.confirmReservation(id, request);
-        reservationDraftService.removeDraft(id);
-
-        return PaymentResponseDto.builder()
-                .reservationId(reservationId)
-                .available(true)
-                .success(true)
-                .message("Payment processed, reservation activated")
-                .build();
     }
 }

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 16,
+  "id": "admin-moderate-reservation",
+  "type": "default",
+  "components": [
+    {
+      "type": "checkbox",
+      "key": "adminApproved",
+      "label": "Approve reservation message",
+      "description": "Checked means the admin approves the cover letter and sends it to the owner.",
+      "validate": {"required": true}
+    },
+    {
+      "type": "textarea",
+      "key": "adminComment",
+      "label": "Admin comment",
+      "description": "Optional moderation comment."
+    }
+  ]
+}
