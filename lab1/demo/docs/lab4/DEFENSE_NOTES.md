@@ -1,83 +1,116 @@
-# Краткие заметки для защиты ЛР4
+# Defense Notes: Lab 4 Camunda Forms Scenario
 
-## Что было реализовано в ЛР1-ЛР3
+## Main Claim
 
-В ЛР1-ЛР3 был реализован Airbnb-подобный сервис быстрого бронирования жилья на Spring
-Boot. В проекте уже были REST API, PostgreSQL, BPMN-описание процесса, JTA/Narayana
-транзакции, Spring Security с JAAS/XML-пользователями/JWT, асинхронная обработка через
-Artemis/JMS/STOMP, Quartz jobs и интеграция с внешней информационной системой через
-Jackrabbit/JCR.
+The demo flow is no longer driven through Insomnia or custom REST calls. The user starts and completes the booking process in Camunda Tasklist with Camunda Forms.
 
-## Что добавлено в ЛР4
+Spring still talks to Camunda REST because Camunda is standalone and the backend is an adapter for external tasks, JMS, transactions and EIS.
 
-В ЛР4 добавлена Camunda как standalone BPMS. Camunda Engine не встроен внутрь Spring Boot.
-Camunda Run хранит исполняемую BPMN-модель, user tasks, Tasklist, Cockpit и формы.
-Spring-приложение теперь работает как внешний клиент и worker.
+## Process
 
-## Как теперь работает процесс
+- key: `airbnb-fast-booking`
+- name: `Airbnb Fast Booking Lab 4`
+- BPMN file: `src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
+- forms directory: `src/main/resources/forms`
+- start form: `start-booking.form`
 
-Порядок шагов процесса теперь хранится в BPMN-файле:
+The BPMN is startable in Tasklist and has a Camunda Form attached to the start event.
 
-`src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
+## User Forms
 
-Пользовательские задачи собирают критерии поиска, выбранное жильё и подтверждение
-бронирования. Сервисные задачи описаны как external tasks. Их topics обрабатываются
-Spring worker'ами.
+Start booking:
 
-## Какие задачи выполняет Camunda
+- `town`
+- `arrival`
+- `departure`
+- `guestsAmount`
+- `petsAmount`
+- `userId`
+- `coverLetter`
 
-Camunda:
+Enter search criteria:
 
-- хранит исполняемую BPMN-модель;
-- создаёт process instances;
-- управляет user tasks и candidate groups;
-- создаёт external tasks для Spring-приложения;
-- содержит timer и message events для отмены, истечения срока и ожидания асинхронного
-  результата.
+- `town`
+- `arrival`
+- `departure`
+- `guestsAmount`
+- `petsAmount`
+- `coverLetter`
 
-## Какие задачи остались в Spring
+Select accommodation:
 
-Spring-приложение:
+- `idPlace`
 
-- аутентифицирует пользователей через JWT/JAAS;
-- выполняет доменные сервисы;
-- сохраняет транзакционные границы Narayana/JTA;
-- отправляет и получает JMS-сообщения;
-- выполняет Quartz cleanup;
-- взаимодействует с Jackrabbit EIS.
+Confirm booking:
 
-## Почему Camunda standalone
+- `bookingConfirmed`
+- `cancelReason`
 
-Standalone-режим выбран потому, что задание ЛР4 требует запускать BPM-движок отдельным
-сервисом. Поэтому в Spring Boot не добавлялся embedded Camunda Engine.
+Cancel booking:
 
-## Почему external task pattern
+- `cancelReason`
+- `bookingCanceled`
 
-External task pattern позволяет оставить существующие Spring-сервисы, безопасность,
-транзакции, JMS, Quartz и EIS-интеграцию внутри приложения. Camunda только управляет
-последовательностью процесса, а фактическая бизнес-операция выполняется там, где она уже
-была реализована.
+The form field names match Java process variables read by workers and BPMN gateways.
 
-## Как работает интеграция с JMS
+## Automatic Steps
 
-Camunda создаёт external task `send-reservation-message`. Spring worker вызывает
-`JmsTaskProducer`, который отправляет сообщение в Artemis. Существующий JMS listener
-обрабатывает сообщение, создаёт итоговую бронь и сохраняет PDF-договор.
+Spring external workers handle:
 
-## Как работает интеграция с Quartz
+- `search-accommodations`
+- `check-availability`
+- `create-reservation-draft`
+- `send-reservation-message`
+- `call-eis-adapter`
+- `finalize-booking`
+- `cancel-expired-draft`
 
-Quartz сохранён как реальный механизм периодической очистки черновиков. В BPMN добавлен
-timer и topic `cancel-expired-draft`, чтобы показать точку интеграции BPMS, но scheduler
-не переносился в Camunda.
+Transactions stay in Spring service methods and JMS listeners. Camunda controls the order of execution and incidents, not distributed transactions.
 
-## Как сохранена безопасность
+## JMS
 
-Spring Security, method-level annotations и XML-пользователи остались. BPMN user tasks
-используют существующую группу `ROLE_USER`. Service tasks выполняются worker'ами внутри
-Spring-приложения.
+The `send-reservation-message` worker sends a JMS message with `draftId`, `taskType` and `processInstanceId`.
 
-## Как сохранены транзакции
+The `ReservationConfirmationJmsListener` creates the final reservation, removes the draft, writes the PDF contract to Jackrabbit, then correlates Camunda message `reservation-async-processed` back to the waiting process instance.
 
-Worker'ы вызывают существующие `@Transactional` сервисы и JMS-listener'ы. Распределённые
-транзакции не переносятся в Camunda, потому что по заданию это не требуется и потому что
-Narayana/JTA уже настроены на стороне Spring-приложения.
+Variables correlated to Camunda:
+
+- `asyncProcessingOk = true`
+- `reservationCreated = true`
+- `reservationId = <created reservation id>`
+
+Manual message correlation from Insomnia is not part of the demo.
+
+## What To Show
+
+1. Camunda standalone is running.
+2. Deployment contains BPMN and all `.form` files.
+3. Tasklist shows `Airbnb Fast Booking Lab 4` in Start process.
+4. Start form is displayed and saves variables.
+5. User tasks open their Camunda Forms.
+6. Cockpit shows external tasks being completed by the Spring worker.
+7. Artemis/JMS receives `reservation.confirmation`.
+8. The JMS listener correlates `reservation-async-processed`.
+9. History shows completed process instance with non-empty `endTime`.
+10. Incidents list is empty.
+
+## Demo Values
+
+Use real IDs from PostgreSQL:
+
+```sql
+select id, username from users order by id;
+select id, town, name from places order by id;
+```
+
+Example form values:
+
+- `town = Moscow`
+- `arrival = 2026-08-01`
+- `departure = 2026-08-05`
+- `guestsAmount = 1`
+- `petsAmount = 0`
+- `userId = <existing DB user id>`
+- `coverLetter = Lab4 Camunda Forms test`
+- `idPlace = <existing DB place id>`
+- `bookingConfirmed = true`

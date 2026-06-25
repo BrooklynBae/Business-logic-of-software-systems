@@ -3,11 +3,18 @@
   "id": "confirm-booking",
   "type": "default",
   "components": [
-    {"type": "number", "key": "idPlace", "label": "Place ID", "validate": {"required": true, "min": 1}},
-    {"type": "datetime", "key": "arrival", "label": "Arrival date", "subtype": "date"},
-    {"type": "datetime", "key": "departure", "label": "Departure date", "subtype": "date"},
-    {"type": "number", "key": "totalPrice", "label": "Total price"},
-    {"type": "textarea", "key": "coverLetter", "label": "Cover letter"},
-    {"type": "checkbox", "key": "confirmedByUser", "label": "I confirm booking parameters"}
+    {
+      "type": "checkbox",
+      "key": "bookingConfirmed",
+      "label": "Confirm booking",
+      "description": "Checked means continue booking. Unchecked means finish through cancellation branch.",
+      "validate": {"required": true}
+    },
+    {
+      "type": "textarea",
+      "key": "cancelReason",
+      "label": "Cancellation reason",
+      "description": "Optional. Fill this if booking is not confirmed."
+    }
   ]
 }

@@ -1,5 +1,7 @@
 package com.blps_lab1.demo.listener;
 
+import com.blps_lab1.demo.bpm.CamundaProcessConstants;
+import com.blps_lab1.demo.bpm.CamundaRestClient;
 import com.blps_lab1.demo.data.tables.PaymentMethod;
 import com.blps_lab1.demo.data.tables.PaymentType;
 import com.blps_lab1.demo.dto.TaskMessage;
@@ -31,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class ReservationConfirmationJmsListener {
@@ -38,14 +41,17 @@ public class ReservationConfirmationJmsListener {
     private final IReservationService reservationService;
     private final IReservationDraftService reservationDraftService;
     private final Repository jackrabbitRepository;
+    private final CamundaRestClient camundaRestClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ReservationConfirmationJmsListener(IReservationService reservationService,
                                               IReservationDraftService reservationDraftService,
-                                              Repository jackrabbitRepository) {
+                                              Repository jackrabbitRepository,
+                                              CamundaRestClient camundaRestClient) {
         this.reservationService = reservationService;
         this.reservationDraftService = reservationDraftService;
         this.jackrabbitRepository = jackrabbitRepository;
+        this.camundaRestClient = camundaRestClient;
     }
 
     @JmsListener(destination = "reservation.confirmation", containerFactory = "jmsListenerContainerFactory")
@@ -75,6 +81,7 @@ public class ReservationConfirmationJmsListener {
 
                 jcrSession = jackrabbitRepository.login(new SimpleCredentials("admin", "admin".toCharArray()));
                 savePdfToJackrabbitEis(jcrSession, newReservationId, pdfContractBytes);
+                correlateAsyncResult(task, newReservationId);
 
                 System.out.println(">>> [XA JTA TRACE] Phase 2 (Commit) завершена. PDF-договор успешно сохранен в КИС.");
             }
@@ -87,6 +94,26 @@ public class ReservationConfirmationJmsListener {
                 jcrSession.logout();
             }
         }
+    }
+
+    private void correlateAsyncResult(TaskMessage task, Long reservationId) {
+        String processInstanceId = task.getProcessInstanceId();
+        if (processInstanceId == null || processInstanceId.isBlank()) {
+            System.out.println(">>> [CAMUNDA JMS ADAPTER] processInstanceId is absent; message correlation skipped for legacy JMS payload.");
+            return;
+        }
+        camundaRestClient.correlateMessage(
+                CamundaProcessConstants.MESSAGE_RESERVATION_ASYNC_PROCESSED,
+                processInstanceId,
+                Map.of(
+                        "asyncProcessingOk", true,
+                        "reservationCreated", true,
+                        "reservationId", reservationId
+                )
+        );
+        System.out.println(">>> [CAMUNDA JMS ADAPTER] Correlated message "
+                + CamundaProcessConstants.MESSAGE_RESERVATION_ASYNC_PROCESSED
+                + " for processInstanceId=" + processInstanceId);
     }
 
     private byte[] generatePdfContractBytes(Long reservationId, Long draftId) throws Exception {

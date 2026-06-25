@@ -11,6 +11,9 @@ public final class CamundaProcessConstants {
     public static final String TOPIC_FINALIZE_BOOKING = "finalize-booking";
     public static final String TOPIC_CANCEL_EXPIRED_DRAFT = "cancel-expired-draft";
 
+    public static final String MESSAGE_RESERVATION_ASYNC_PROCESSED = "reservation-async-processed";
+    public static final String VARIABLE_PROCESS_INSTANCE_ID = "processInstanceId";
+
     private CamundaProcessConstants() {
     }
 }

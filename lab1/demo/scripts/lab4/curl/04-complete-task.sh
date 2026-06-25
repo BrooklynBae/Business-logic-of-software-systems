@@ -15,8 +15,7 @@ curl -s -X POST "${APP_URL}/api/bpm/tasks/${TASK_ID}/complete" \
     "guestsAmount": 2,
     "petsAmount": 0,
     "idPlace": 1,
-    "selectedPlaceId": 1,
-    "confirmedByUser": true,
+    "bookingConfirmed": true,
     "coverLetter": "Lab 4 Camunda booking"
   }'
 echo

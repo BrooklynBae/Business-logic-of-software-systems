@@ -64,6 +64,10 @@ public class CamundaExternalTaskWorkers {
             String taskId = String.valueOf(task.get("id"));
             try {
                 Map<String, Object> variables = CamundaVariablesMapper.fromCamundaVariables(task.get("variables"));
+                Object processInstanceId = task.get(CamundaProcessConstants.VARIABLE_PROCESS_INSTANCE_ID);
+                if (processInstanceId != null) {
+                    variables.put(CamundaProcessConstants.VARIABLE_PROCESS_INSTANCE_ID, processInstanceId);
+                }
                 Map<String, Object> result = handler.handle(variables);
                 camundaRestClient.completeExternalTask(taskId, result);
             } catch (Exception e) {
@@ -106,7 +110,8 @@ public class CamundaExternalTaskWorkers {
 
     private Map<String, Object> sendReservationMessage(Map<String, Object> variables) {
         Long draftId = longValue(variables, "draftId");
-        jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draftId, "CREATE_RESERVATION"));
+        String processInstanceId = stringValue(variables, CamundaProcessConstants.VARIABLE_PROCESS_INSTANCE_ID);
+        jmsTaskProducer.sendToQueue("reservation.confirmation", new TaskMessage(draftId, "CREATE_RESERVATION", processInstanceId));
         return Map.of("asyncMessageSent", true);
     }
 

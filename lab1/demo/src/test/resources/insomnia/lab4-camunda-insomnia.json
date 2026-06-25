@@ -39,7 +39,7 @@
       "_id": "req_lab4_start",
       "_type": "request",
       "parentId": "wrk_lab4_camunda",
-      "name": "Start BPM Reservation",
+      "name": "Diagnostic: Start BPM Reservation",
       "method": "POST",
       "url": "{{ _.appUrl }}/api/bpm/reservations/start",
       "body": {
@@ -64,12 +64,12 @@
       "_id": "req_lab4_complete",
       "_type": "request",
       "parentId": "wrk_lab4_camunda",
-      "name": "Complete BPM Task",
+      "name": "Diagnostic: Complete BPM Task",
       "method": "POST",
       "url": "{{ _.appUrl }}/api/bpm/tasks/{{ _.taskId }}/complete",
       "body": {
         "mimeType": "application/json",
-        "text": "{\"town\":\"Saint Petersburg\",\"arrival\":\"2026-07-01\",\"departure\":\"2026-07-05\",\"guestsAmount\":2,\"petsAmount\":0,\"idPlace\":1,\"selectedPlaceId\":1,\"confirmedByUser\":true,\"coverLetter\":\"Lab 4 Camunda booking\"}"
+        "text": "{\"town\":\"Saint Petersburg\",\"arrival\":\"2026-07-01\",\"departure\":\"2026-07-05\",\"guestsAmount\":2,\"petsAmount\":0,\"idPlace\":1,\"bookingConfirmed\":true,\"coverLetter\":\"Lab 4 Camunda booking\"}"
       },
       "headers": [
         {"name": "Content-Type", "value": "application/json"},

@@ -1,154 +1,149 @@
-# ЛР4: интеграция Camunda standalone BPMS
+# Lab 4: Camunda Standalone BPMS
 
-## Что изменилось по сравнению с ЛР3
+## Architecture
 
-В ЛР4 добавлена Camunda Platform 7 / Camunda Run как отдельный standalone BPMS-сервис.
-Camunda Engine не встраивается внутрь Spring Boot приложения. Spring-приложение
-обращается к Camunda через REST API и выполняет external tasks из BPMN-модели.
+Camunda Platform 7 is used as a standalone BPMS service. The Spring/WildFly application does not embed the engine. It connects to Camunda through REST and works as an external task adapter for database services, transactions, JMS and EIS.
 
-Старые компоненты ЛР1-ЛР3 сохранены: бизнес-сервисы, REST API, Spring Security,
-PostgreSQL, MinIO, Artemis/JMS, Quartz, Narayana/JTA и интеграция с Jackrabbit EIS.
+Main process:
 
-## Почему бизнес-логика теперь считается динамической
+- BPMN: `src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
+- process key: `airbnb-fast-booking`
+- process name: `Airbnb Fast Booking Lab 4`
+- startable from Camunda Tasklist: yes
 
-До ЛР4 порядок действий был в основном зашит в контроллерах и сервисах. Теперь порядок
-сценария описан в BPMN:
+Camunda Forms:
 
-`src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
-
-Spring-сервисы продолжают выполнять доменную работу, но Camunda определяет, какой шаг
-процесса активен: поиск, выбор жилья, проверка доступности, создание черновика, проверка
-EIS, отправка асинхронного сообщения, ожидание результата, финализация или отмена.
-
-## Где находится BPMN-модель
-
-BPMN-файл:
-
-`src/main/resources/bpmn/airbnb-fast-booking-lab4.bpmn`
-
-Ключ процесса:
-
-`airbnb-fast-booking`
-
-Файл можно открыть в Camunda Modeler.
-
-## Где находятся Camunda Forms
-
-Формы пользовательских задач находятся в:
-
+- `src/main/resources/forms/start-booking.form`
 - `src/main/resources/forms/search-accommodation.form`
 - `src/main/resources/forms/select-accommodation.form`
 - `src/main/resources/forms/confirm-booking.form`
 - `src/main/resources/forms/cancel-booking.form`
 
-В BPMN они подключаются через `camunda:formRef`.
+## What Runs In Camunda
 
-## Как Spring-приложение связано с Camunda standalone
+Camunda owns the dynamic route of the business process: start form, user tasks, gateways, timers, message wait state, external service tasks, incidents and history.
 
-Подключение к standalone Camunda REST API настраивается так:
+User tasks are completed in Camunda Tasklist through Camunda Forms. The demo user does not call the application REST API by hand to start the process or complete user tasks.
 
-```properties
-camunda.base-url=http://127.0.0.1:8080/engine-rest
-camunda.process-definition-key=airbnb-fast-booking
-camunda.worker-id=airbnb-lab4-worker
-camunda.external-task.lock-duration=30000
-```
+## What Runs In Spring
 
-Новый слой Spring:
+Spring keeps the existing backend responsibilities:
 
-- `bpm/CamundaRestClient`
-- `bpm/CamundaProcessService`
-- `bpm/CamundaTaskService`
-- `bpm/CamundaExternalTaskWorkers`
-- `controller/BpmReservationController`
+- JPA/service-layer transactions and Narayana/JTA boundaries;
+- Spring Security and method-level authorities;
+- reservation draft creation and final reservation creation;
+- Artemis/JMS producer/listener;
+- Jackrabbit/JCR EIS integration;
+- Quartz/Spring scheduled cleanup.
 
-Новые endpoints:
+Camunda service tasks are external tasks. The Spring worker polls these topics:
 
-- `POST /api/bpm/reservations/start`
-- `GET /api/bpm/reservations/{processInstanceId}`
-- `GET /api/bpm/tasks/my`
-- `POST /api/bpm/tasks/{taskId}/complete`
-- `POST /api/bpm/reservations/{processInstanceId}/cancel`
+- `search-accommodations`
+- `check-availability`
+- `create-reservation-draft`
+- `send-reservation-message`
+- `call-eis-adapter`
+- `finalize-booking`
+- `cancel-expired-draft`
 
-## Как сохранились роли
+## JMS And Message Correlation
 
-Spring Security, JAAS, XML-пользователи и JWT остаются включёнными. BPM endpoints
-защищены через method security. В BPMN пользовательские задачи используют существующую
-группу:
+The BPMN process waits for message `reservation-async-processed` after the `send-reservation-message` external task.
 
-- `ROLE_USER` для поиска, выбора жилья и подтверждения бронирования.
+The Spring worker sends a JMS payload to `reservation.confirmation` with:
 
-Старые сервисы продолжают использовать существующие authorities:
+- `draftId`
+- `taskType = CREATE_RESERVATION`
+- `processInstanceId`
 
-- `PERM_PROCESS_PAYMENT`
-- `PERM_MANAGE_OWN_PLACES`
-- `PERM_MANAGE_USERS`
-- `PERM_MODERATE_DRAFTS`
-- `PERM_CONFIRM_RESERVATIONS`
+After the JMS listener creates the final reservation and stores the PDF contract in Jackrabbit, it calls Camunda REST `/message` itself. It correlates `reservation-async-processed` to the original `processInstanceId` and passes:
 
-## Как сохранились транзакции
+- `asyncProcessingOk = true`
+- `reservationCreated = true`
+- `reservationId = <created reservation id>`
 
-Настройки Narayana/JTA остаются в `application.properties`. Транзакционные границы
-по-прежнему находятся в Spring-сервисах и JMS-listener'ах. Camunda не выполняет
-распределённые транзакции. External workers вызывают сервисы, где уже есть
-`@Transactional`.
+Because of this, no manual Insomnia request to `/engine-rest/message` is needed.
 
-## Как сохранилась асинхронная обработка
+## Roles
 
-Artemis/JMS остаётся механизмом асинхронной обработки. BPMN task
-`send-reservation-message` вызывает `JmsTaskProducer`, который отправляет сообщение в
-существующую очередь `reservation.confirmation`. Старые listener'ы обрабатывают сообщение
-и обновляют PostgreSQL/EIS как раньше.
+Spring business access is still enforced by Spring Security authorities.
 
-## Как сохранился Quartz
+Camunda Tasklist assignment is separate from Spring Security. The BPMN user tasks use candidate group `ROLE_USER`. For the demo, create or use a Camunda user that belongs to `ROLE_USER`, or adjust the Camunda demo user/group mapping on the standalone engine.
 
-Quartz по-прежнему отвечает за периодическую очистку через `DeleteExpiredDraftsJob`.
-В BPMN также есть timer для истечения черновика и external task `cancel-expired-draft`,
-но это точка интеграции с BPMS, а не замена Quartz.
+Recommended Camunda demo identities:
 
-## Как сохранилась JCA/EIS-интеграция
+- user `user`, group `ROLE_USER`
+- user `owner`, group `ROLE_OWNER`
+- user `admin`, group `ROLE_ADMIN`
 
-Jackrabbit/JCR интеграция остаётся в `JackrabbitJcaConfig` и
-`ReservationConfirmationJmsListener`. В Camunda-процесс добавлен topic
-`call-eis-adapter`; worker проверяет существующий EIS adapter.
+Only `ROLE_USER` is required for the current fast-booking path.
 
-## Почему распределённую обработку и распределённые транзакции не переносили в Camunda
+## Local Startup
 
-По заданию ЛР4 переносить распределённую обработку и распределённые транзакции внутрь
-BPM-движка не требуется. Поэтому Camunda координирует бизнес-процесс, а Spring, JMS и
-Narayana продолжают выполнять распределённую работу.
-
-## Как запустить локально
-
-Нужно поднять PostgreSQL, MinIO, Artemis и Camunda Run.
-
-Деплой BPMN:
+Start infrastructure and Camunda standalone, then deploy the BPMN and forms:
 
 ```bash
 CAMUNDA_URL=http://127.0.0.1:8080/engine-rest scripts/lab4/deploy-bpmn.sh
 ```
 
-Запуск приложения:
+Run the backend locally:
 
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=local,camunda'
 ```
 
-## Как развернуть на helios/WildFly
+Build the deployable WAR:
 
-Подробная инструкция находится здесь:
+```bash
+./gradlew clean build
+```
 
-`docs/lab4/DEPLOY_WILDFLY_HELIOS.md`
+WildFly/helios deployment notes are in `docs/lab4/DEPLOY_WILDFLY_HELIOS.md`.
 
-## Как показать работоспособность преподавателю
+## Demo Data
 
-1. Открыть BPMN-файл в Camunda Modeler.
-2. Запустить Camunda standalone.
-3. Задеплоить BPMN.
-4. Запустить Spring-приложение.
-5. Авторизоваться через `/auth/login`.
-6. Запустить процесс через `/api/bpm/reservations/start`.
-7. Открыть Camunda Tasklist и выполнить user tasks.
-8. Показать, что external tasks выполняются Spring worker'ами.
-9. Показать логи JMS listener'ов и результат бронирования/договора.
-10. Показать, что Quartz job остался в конфигурации.
+The Camunda forms require real database IDs:
+
+- `userId`: ID of an existing user;
+- `idPlace`: ID of an existing place.
+
+Do not guess these values. Use one of the existing seed flows or query PostgreSQL:
+
+```sql
+select id, username from users order by id;
+select id, town, name from places order by id;
+```
+
+Use the returned IDs in Tasklist forms.
+
+## How To Defend Through Camunda Forms
+
+1. Start Camunda standalone.
+2. Deploy BPMN and forms with `scripts/lab4/deploy-bpmn.sh`.
+3. Deploy or start the Spring backend on WildFly/helios.
+4. Open Camunda Tasklist.
+5. Start process `Airbnb Fast Booking Lab 4`.
+6. Fill the Start Form:
+   - `town = Moscow`
+   - `arrival = 2026-08-01`
+   - `departure = 2026-08-05`
+   - `guestsAmount = 1`
+   - `petsAmount = 0`
+   - `userId = <existing DB user id>`
+   - `coverLetter = Lab4 Camunda Forms test`
+7. Complete `Enter search criteria` if you need to adjust the same search values.
+8. Complete `Select accommodation`:
+   - `idPlace = <existing DB place id>`
+9. Complete `Confirm booking`:
+   - `bookingConfirmed = true`
+   - leave `cancelReason` empty
+10. Open Cockpit and watch the token move through external tasks.
+11. Wait for the JMS async step to finish automatically.
+12. In Cockpit History, show that the process instance is completed and `endTime` is set.
+13. In Cockpit Incidents, show that there are no incidents.
+
+Debug REST endpoints under `/api/bpm/**` may remain for diagnostics, but they are not the user interface for the defended scenario.
+
+Defense phrase:
+
+> Пользовательский интерфейс реализован через Camunda Tasklist и Camunda Forms. Пользователь не вызывает REST API приложения вручную: он запускает процесс и выполняет User Task через формы. Camunda Engine управляет маршрутом BPMN-процесса. Spring backend используется как набор адаптеров для автоматических service tasks: он через external task worker выполняет операции с БД, транзакционные сервисы, JMS и EIS. JMS-интеграция не переносится внутрь Camunda напрямую, а подключается через adapter/API, как разрешено в ТЗ.

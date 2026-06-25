@@ -3,6 +3,7 @@
   "id": "cancel-booking",
   "type": "default",
   "components": [
-    {"type": "textarea", "key": "reason", "label": "Cancellation reason", "validate": {"required": true}}
+    {"type": "textarea", "key": "cancelReason", "label": "Cancellation reason", "validate": {"required": true}},
+    {"type": "checkbox", "key": "bookingCanceled", "label": "Booking canceled", "defaultValue": true}
   ]
 }

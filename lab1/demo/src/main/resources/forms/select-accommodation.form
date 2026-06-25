@@ -3,7 +3,12 @@
   "id": "select-accommodation",
   "type": "default",
   "components": [
-    {"type": "number", "key": "selectedPlaceId", "label": "Selected place ID", "validate": {"required": true, "min": 1}},
-    {"type": "textfield", "key": "selectedPlaceName", "label": "Selected place name"}
+    {
+      "type": "number",
+      "key": "idPlace",
+      "label": "Accommodation database ID",
+      "description": "ID of a place that already exists in PostgreSQL demo data.",
+      "validate": {"required": true, "min": 1}
+    }
   ]
 }

@@ -7,8 +7,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   id="Definitions_AirbnbFastBookingLab4"
                   targetNamespace="http://blps-lab4/camunda">
-  <bpmn:process id="airbnb-fast-booking" name="Airbnb Fast Booking Lab 4" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_BookingStarted" name="Start booking">
+  <bpmn:process id="airbnb-fast-booking" name="Airbnb Fast Booking Lab 4" isExecutable="true" camunda:isStartableInTasklist="true">
+    <bpmn:startEvent id="StartEvent_BookingStarted" name="Start booking" camunda:formRef="start-booking" camunda:formRefBinding="latest">
       <bpmn:outgoing>Flow_Start_SearchForm</bpmn:outgoing>
     </bpmn:startEvent>
 
@@ -46,8 +46,14 @@
 
     <bpmn:userTask id="UserTask_ConfirmBooking" name="Confirm booking parameters" camunda:candidateGroups="ROLE_USER" camunda:formRef="confirm-booking" camunda:formRefBinding="latest">
       <bpmn:incoming>Flow_Available_Confirm</bpmn:incoming>
-      <bpmn:outgoing>Flow_Confirm_CreateDraft</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Confirm_ConfirmedGateway</bpmn:outgoing>
     </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_BookingConfirmed" name="Booking confirmed?">
+      <bpmn:incoming>Flow_Confirm_ConfirmedGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Confirmed_CreateDraft</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NotConfirmed_Cancel</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
     <bpmn:boundaryEvent id="BoundaryEvent_DraftTimer" name="Draft expired" attachedToRef="UserTask_ConfirmBooking">
       <bpmn:outgoing>Flow_Timer_CancelExpired</bpmn:outgoing>
@@ -62,7 +68,7 @@
     </bpmn:boundaryEvent>
 
     <bpmn:serviceTask id="ServiceTask_CreateDraft" name="Create reservation draft" camunda:type="external" camunda:topic="create-reservation-draft">
-      <bpmn:incoming>Flow_Confirm_CreateDraft</bpmn:incoming>
+      <bpmn:incoming>Flow_Confirmed_CreateDraft</bpmn:incoming>
       <bpmn:outgoing>Flow_CreateDraft_Eis</bpmn:outgoing>
     </bpmn:serviceTask>
 
@@ -103,6 +109,7 @@
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_Cancelled" name="Booking cancelled">
       <bpmn:incoming>Flow_Cancel_End</bpmn:incoming>
+      <bpmn:incoming>Flow_NotConfirmed_Cancel</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_Expired" name="Draft expired">
       <bpmn:incoming>Flow_CancelExpired_End</bpmn:incoming>
@@ -125,8 +132,13 @@
     <bpmn:sequenceFlow id="Flow_Unavailable_End" sourceRef="Gateway_Available" targetRef="EndEvent_Unavailable">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${available == false}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Available_Confirm_Default" sourceRef="Gateway_Available" targetRef="UserTask_ConfirmBooking"/>
-    <bpmn:sequenceFlow id="Flow_Confirm_CreateDraft" sourceRef="UserTask_ConfirmBooking" targetRef="ServiceTask_CreateDraft"/>
+    <bpmn:sequenceFlow id="Flow_Confirm_ConfirmedGateway" sourceRef="UserTask_ConfirmBooking" targetRef="Gateway_BookingConfirmed"/>
+    <bpmn:sequenceFlow id="Flow_Confirmed_CreateDraft" sourceRef="Gateway_BookingConfirmed" targetRef="ServiceTask_CreateDraft">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bookingConfirmed == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NotConfirmed_Cancel" sourceRef="Gateway_BookingConfirmed" targetRef="EndEvent_Cancelled">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bookingConfirmed == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Timer_CancelExpired" sourceRef="BoundaryEvent_DraftTimer" targetRef="ServiceTask_CancelExpiredDraft"/>
     <bpmn:sequenceFlow id="Flow_Cancel_End" sourceRef="BoundaryEvent_UserCancel" targetRef="EndEvent_Cancelled"/>
     <bpmn:sequenceFlow id="Flow_CreateDraft_Eis" sourceRef="ServiceTask_CreateDraft" targetRef="ServiceTask_CallEis"/>

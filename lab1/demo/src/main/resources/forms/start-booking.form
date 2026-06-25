@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 16,
+  "id": "start-booking",
+  "type": "default",
+  "components": [
+    {
+      "type": "textfield",
+      "key": "town",
+      "label": "Town",
+      "description": "City where accommodation should be searched, for example Moscow.",
+      "defaultValue": "Moscow",
+      "validate": {"required": true}
+    },
+    {
+      "type": "datetime",
+      "key": "arrival",
+      "label": "Arrival date",
+      "description": "Use date format YYYY-MM-DD.",
+      "subtype": "date",
+      "validate": {"required": true}
+    },
+    {
+      "type": "datetime",
+      "key": "departure",
+      "label": "Departure date",
+      "description": "Use date format YYYY-MM-DD.",
+      "subtype": "date",
+      "validate": {"required": true}
+    },
+    {
+      "type": "number",
+      "key": "guestsAmount",
+      "label": "Guests amount",
+      "description": "Number of guests.",
+      "defaultValue": 1,
+      "validate": {"required": true, "min": 1}
+    },
+    {
+      "type": "number",
+      "key": "petsAmount",
+      "label": "Pets amount",
+      "description": "Optional. Use 0 if there are no pets.",
+      "defaultValue": 0,
+      "validate": {"min": 0}
+    },
+    {
+      "type": "number",
+      "key": "userId",
+      "label": "Existing database user ID",
+      "description": "ID of an existing user from PostgreSQL demo data.",
+      "validate": {"required": true, "min": 1}
+    },
+    {
+      "type": "textarea",
+      "key": "coverLetter",
+      "label": "Cover letter",
+      "description": "Optional message for the accommodation owner."
+    }
+  ]
+}

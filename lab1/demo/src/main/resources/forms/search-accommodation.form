@@ -3,11 +3,11 @@
   "id": "search-accommodation",
   "type": "default",
   "components": [
-    {"type": "textfield", "key": "town", "label": "City / location"},
-    {"type": "datetime", "key": "arrival", "label": "Arrival date", "subtype": "date"},
-    {"type": "datetime", "key": "departure", "label": "Departure date", "subtype": "date"},
-    {"type": "number", "key": "guestsAmount", "label": "Guests", "validate": {"required": true, "min": 1}},
-    {"type": "number", "key": "petsAmount", "label": "Pets", "validate": {"min": 0}},
-    {"type": "number", "key": "maxPrice", "label": "Maximum price"}
+    {"type": "textfield", "key": "town", "label": "Town", "description": "City where accommodation should be searched, for example Moscow.", "validate": {"required": true}},
+    {"type": "datetime", "key": "arrival", "label": "Arrival date", "description": "Use date format YYYY-MM-DD.", "subtype": "date", "validate": {"required": true}},
+    {"type": "datetime", "key": "departure", "label": "Departure date", "description": "Use date format YYYY-MM-DD.", "subtype": "date", "validate": {"required": true}},
+    {"type": "number", "key": "guestsAmount", "label": "Guests amount", "defaultValue": 1, "validate": {"required": true, "min": 1}},
+    {"type": "number", "key": "petsAmount", "label": "Pets amount", "description": "Optional. Use 0 if there are no pets.", "defaultValue": 0, "validate": {"min": 0}},
+    {"type": "textarea", "key": "coverLetter", "label": "Cover letter", "description": "Optional message for the accommodation owner."}
   ]
 }
